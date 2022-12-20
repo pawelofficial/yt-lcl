@@ -12,7 +12,7 @@ class yt:
         self.secrets=json.load(open(f'./secrets/{self.secret_json}.json'))['installed']
         self.base_uri='https://www.googleapis.com/youtube/v3/'
         self.endpoints={'activities':'activities'}
-        self.api_key=json.load(open(f'./secrets/{self.secret_json}.json'))['api_key']
+        self.api_key=json.load(open(f'./secrets/api_key.json'))['api_key']
         
         # yeah this is not working 
         self.session=None 
@@ -42,6 +42,7 @@ class yt:
         input_file=f"{title}.webm"
         output_file=f'{title}.mp3'
         l=["C:\\ffmpeg\\bin\\ffmpeg", "-i", mycwd+input_file, "-vn", "-acodec", "libmp3lame", "-b:a", "128k", mycwd+output_file]
+        input('2')
         subprocess.run(l,shell=True)
         
         l=["del",input_file]
@@ -58,5 +59,5 @@ class yt:
 
 if __name__=='__main__':
     yt=yt()
-    yt.download()
+    yt.download_vid()
 #    yt.get_activities()
