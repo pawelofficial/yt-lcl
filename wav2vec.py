@@ -45,7 +45,13 @@ bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
 #bundle = torchaudio.pipelines.HUBERT_ASR_XLARGE
 model = bundle.get_model().to(device)
 
+labels=bundle.get_labels()
+print(labels)
 
+from torchaudio.models.decoder import download_pretrained_files
+files = download_pretrained_files("librispeech-4-gram")
+print(files)
+exit(1)
 
 class GreedyCTCDecoder(torch.nn.Module):
     def __init__(self, labels, blank=0):
