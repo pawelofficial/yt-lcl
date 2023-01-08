@@ -77,17 +77,22 @@ if __name__=='__main__':
     w=wiz.wizard()
     url='https://www.youtube.com/@kitco'
     url='https://www.youtube.com/@LibertyandFinance'
-    l=get_channel_info(w=w,url=url)             # get last n videos uploaded 
-    o=check_ids_not_present_in_db(w=w,l=l)      # get videos that are not in db 
+#    l=get_channel_info(w=w,url=url)             # get last n videos uploaded 
+
+#    o=check_ids_not_present_in_db(w=w,l=l)      # get videos that are not in db 
     # download subtitles of new videos and insert them into db 
     d={}
-    for id in o:
+    l=['3Ic_3pP6y1E']
+    for id in l:
+        print(id)
         d['ID']=id
         url=build_url(s=id,from_id=True)
+        url='https://www.youtube.com/watch?v=3Ic_3pP6y1E&ab_channel=LibertyandFinance'
         fname,ext,org_title=w.download_vid(yt_url=url)
         d['URL']=url
         d['TITLE']=fname
         d['RAW_TRANSCRIPT']=open(path_join(l=['transcripts','raw',fname+'.txt']),'r').read()
         d['PARSED_TRANSCRIPT']=open(path_join(l=['transcripts','parsed',fname+'.txt']),'r').read()
         w.db.insert_into_d(table_name='TEST',d=d)
+        exit(1)
 #        o=w.db.select_star(table_name='TEST')

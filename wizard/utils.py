@@ -3,7 +3,18 @@ import datetime
 import os 
 import datetime
 import re 
+import time 
 # sets up logger 
+
+def measure_time(func):
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        result = func(*args, **kwargs)
+        end = time.perf_counter()
+        print(f"{func.__name__} took {end - start:.6f} seconds to execute")
+        return result
+    return wrapper
+
 def setup_logger(name, log_file, level=logging.INFO):
     log_file=os.getcwd()+'/wizard/logs/'+log_file
     handler = logging.FileHandler(log_file)        

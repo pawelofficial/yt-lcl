@@ -4,9 +4,9 @@ import os
 
 
 if __package__=='wizard':                               # imports when run as package
-    from .utils import setup_logger,log_variable,parse_url     
+    from .utils import *    
 else:                                                   # import when ran as script and from other scripts
-    from utils import log_variable,setup_logger,parse_url
+    from utils import *
 
 
 # yt class for getting things from youtube 
@@ -60,6 +60,7 @@ class ytDownloader:
 
     # returns dictionary with info about last n videos found on a channel 
     # d = {'video_id':'upload_date'} date is in YYYYMMDD ufortunately :< 
+    @measure_time
     def get_channel_info(self,channel_url):
         id,channel,url,base=parse_url(channel_url)
         channel_url=base+channel
@@ -71,13 +72,10 @@ class ytDownloader:
         l=["yt-dlp","--skip-download",channel_url,"--playlist-start","1","--playlist-end","10"
            ,'--print','id','--print','upload_date'
            ]
-        import datetime 
-        print(datetime.datetime.now().isoformat(), 'foo')
         o=self.subprocess_run(l).splitlines()
-        print(datetime.datetime.now().isoformat(),'bar')
         d={o[k]:o[k+1] for k in range(0,len(o),2) }
         return d 
-        
+    @measure_time
     def download_vid(self,yt_url : yt_url =None,
                      convert_to_wav : bool = True,      # convert video to wav 
                      timestamps : list = [None, None],  # for example  ["00:00:00","inf"],
@@ -152,6 +150,7 @@ class ytDownloader:
             lines=f.readlines()
         timestamp_pattern = re.compile(r'(\d\d:\d\d:\d\d\.\d\d\d) --> (\d\d:\d\d:\d\d\.\d\d\d)')
         old_text=''
+        previous_text=''
         with open(f2,'w+') as f:
             for i,line in enumerate(lines):
                 match = timestamp_pattern.match(line)
@@ -159,10 +158,18 @@ class ytDownloader:
                     start_timestamp = match.group(1)
                     end_timestamp = match.group(2)
                     text = lines[i+1]#.replace(start_timestamp, '').replace(end_timestamp, '')
-                    s=f"{start_timestamp} || {end_timestamp} || {text}"
-                    if text!=old_text and text.strip()!='':
+                    
+                    no=len(text.strip().split(' '))
+                    if no<=1:
+                        previous_text=text.strip()+' ' # move one worders to next line 
+                        continue
+                    
+                    text=(previous_text + text ).strip()
+                    s=f"{start_timestamp} || {end_timestamp} || {text}\n"
+                    if text!=old_text and text.strip()!='': # remove duplicated lines 
                         f.write(s)    
                     old_text=text
+                    previous_text=''
         
            
  
