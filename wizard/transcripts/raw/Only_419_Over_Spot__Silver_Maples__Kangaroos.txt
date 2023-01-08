@@ -1,0 +1,224 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.000 --> 00:00:02.210 align:start position:0%
+ 
+this<00:00:00.539><c> is</c><00:00:00.719><c> Kaiser</c><00:00:01.199><c> Johnson</c><00:00:01.319><c> with</c><00:00:01.620><c> liberty</c><00:00:02.040><c> and</c>
+
+00:00:02.210 --> 00:00:02.220 align:start position:0%
+this is Kaiser Johnson with liberty and
+ 
+
+00:00:02.220 --> 00:00:04.010 align:start position:0%
+this is Kaiser Johnson with liberty and
+finance<00:00:02.580><c> and</c><00:00:03.060><c> this</c><00:00:03.240><c> is</c><00:00:03.419><c> the</c><00:00:03.540><c> miles</c><00:00:03.659><c> Franklin</c>
+
+00:00:04.010 --> 00:00:04.020 align:start position:0%
+finance and this is the miles Franklin
+ 
+
+00:00:04.020 --> 00:00:06.410 align:start position:0%
+finance and this is the miles Franklin
+weekly<00:00:04.560><c> special</c><00:00:04.740><c> for</c><00:00:05.400><c> January</c><00:00:05.759><c> 3rd</c><00:00:06.240><c> through</c>
+
+00:00:06.410 --> 00:00:06.420 align:start position:0%
+weekly special for January 3rd through
+ 
+
+00:00:06.420 --> 00:00:09.830 align:start position:0%
+weekly special for January 3rd through
+January<00:00:06.839><c> 10</c><00:00:07.080><c> 2023</c><00:00:07.859><c> while</c><00:00:08.280><c> supplies</c><00:00:08.880><c> last</c><00:00:09.179><c> this</c>
+
+00:00:09.830 --> 00:00:09.840 align:start position:0%
+January 10 2023 while supplies last this
+ 
+
+00:00:09.840 --> 00:00:11.450 align:start position:0%
+January 10 2023 while supplies last this
+week<00:00:10.019><c> we</c><00:00:10.260><c> feature</c><00:00:10.559><c> both</c><00:00:10.740><c> of</c><00:00:11.040><c> the</c><00:00:11.280><c> only</c>
+
+00:00:11.450 --> 00:00:11.460 align:start position:0%
+week we feature both of the only
+ 
+
+00:00:11.460 --> 00:00:13.730 align:start position:0%
+week we feature both of the only
+regularly<00:00:12.059><c> minted</c><00:00:12.540><c> four</c><00:00:12.780><c> nines</c><00:00:13.139><c> fine</c><00:00:13.440><c> silver</c>
+
+00:00:13.730 --> 00:00:13.740 align:start position:0%
+regularly minted four nines fine silver
+ 
+
+00:00:13.740 --> 00:00:16.189 align:start position:0%
+regularly minted four nines fine silver
+coins<00:00:14.219><c> in</c><00:00:14.519><c> the</c><00:00:14.639><c> world</c><00:00:14.759><c> silver</c><00:00:15.719><c> Maples</c>
+
+00:00:16.189 --> 00:00:16.199 align:start position:0%
+coins in the world silver Maples
+ 
+
+00:00:16.199 --> 00:00:18.950 align:start position:0%
+coins in the world silver Maples
+backdated<00:00:16.740><c> and</c><00:00:17.160><c> silver</c><00:00:17.340><c> kangaroos</c><00:00:18.000><c> from</c><00:00:18.300><c> 2022</c>
+
+00:00:18.950 --> 00:00:18.960 align:start position:0%
+backdated and silver kangaroos from 2022
+ 
+
+00:00:18.960 --> 00:00:22.609 align:start position:0%
+backdated and silver kangaroos from 2022
+at<00:00:19.500><c> just</c><00:00:19.699><c> 4.19</c><00:00:20.699><c> Silver</c><00:00:21.300><c> Spot</c><00:00:21.660><c> both</c><00:00:22.380><c> the</c>
+
+00:00:22.609 --> 00:00:22.619 align:start position:0%
+at just 4.19 Silver Spot both the
+ 
+
+00:00:22.619 --> 00:00:24.650 align:start position:0%
+at just 4.19 Silver Spot both the
+backdated<00:00:22.980><c> silver</c><00:00:23.279><c> Maples</c><00:00:23.760><c> and</c><00:00:23.939><c> the</c><00:00:24.119><c> 2022</c>
+
+00:00:24.650 --> 00:00:24.660 align:start position:0%
+backdated silver Maples and the 2022
+ 
+
+00:00:24.660 --> 00:00:26.630 align:start position:0%
+backdated silver Maples and the 2022
+silver<00:00:24.900><c> kangaroos</c><00:00:25.619><c> are</c><00:00:25.920><c> renowned</c><00:00:26.279><c> for</c><00:00:26.400><c> their</c>
+
+00:00:26.630 --> 00:00:26.640 align:start position:0%
+silver kangaroos are renowned for their
+ 
+
+00:00:26.640 --> 00:00:29.450 align:start position:0%
+silver kangaroos are renowned for their
+purity<00:00:26.939><c> recognizability</c><00:00:27.900><c> and</c><00:00:28.380><c> design</c><00:00:28.680><c> they</c>
+
+00:00:29.450 --> 00:00:29.460 align:start position:0%
+purity recognizability and design they
+ 
+
+00:00:29.460 --> 00:00:31.669 align:start position:0%
+purity recognizability and design they
+both<00:00:29.640><c> come</c><00:00:29.820><c> 25</c><00:00:30.119><c> to</c><00:00:30.539><c> a</c><00:00:30.660><c> tube</c><00:00:31.019><c> and</c><00:00:31.199><c> Maples</c><00:00:31.500><c> are</c>
+
+00:00:31.669 --> 00:00:31.679 align:start position:0%
+both come 25 to a tube and Maples are
+ 
+
+00:00:31.679 --> 00:00:34.190 align:start position:0%
+both come 25 to a tube and Maples are
+500<00:00:32.040><c> to</c><00:00:32.220><c> a</c><00:00:32.399><c> box</c><00:00:32.520><c> while</c><00:00:33.180><c> the</c><00:00:33.420><c> kangaroos</c><00:00:33.840><c> are</c><00:00:34.079><c> one</c>
+
+00:00:34.190 --> 00:00:34.200 align:start position:0%
+500 to a box while the kangaroos are one
+ 
+
+00:00:34.200 --> 00:00:35.930 align:start position:0%
+500 to a box while the kangaroos are one
+of<00:00:34.320><c> the</c><00:00:34.380><c> most</c><00:00:34.559><c> affordable</c><00:00:34.920><c> boxes</c><00:00:35.399><c> around</c><00:00:35.579><c> with</c>
+
+00:00:35.930 --> 00:00:35.940 align:start position:0%
+of the most affordable boxes around with
+ 
+
+00:00:35.940 --> 00:00:39.170 align:start position:0%
+of the most affordable boxes around with
+just<00:00:36.180><c> 250</c><00:00:36.780><c> coins</c><00:00:37.320><c> we</c><00:00:38.100><c> have</c><00:00:38.219><c> both</c><00:00:38.460><c> coins</c><00:00:38.880><c> in</c>
+
+00:00:39.170 --> 00:00:39.180 align:start position:0%
+just 250 coins we have both coins in
+ 
+
+00:00:39.180 --> 00:00:41.150 align:start position:0%
+just 250 coins we have both coins in
+stock<00:00:39.360><c> and</c><00:00:39.540><c> ready</c><00:00:39.719><c> to</c><00:00:39.960><c> ship</c><00:00:40.140><c> and</c><00:00:40.620><c> both</c><00:00:40.800><c> at</c><00:00:40.980><c> just</c>
+
+00:00:41.150 --> 00:00:41.160 align:start position:0%
+stock and ready to ship and both at just
+ 
+
+00:00:41.160 --> 00:00:44.990 align:start position:0%
+stock and ready to ship and both at just
+4.19<00:00:42.000><c> over</c><00:00:42.540><c> spot</c><00:00:42.840><c> and</c><00:00:43.500><c> finally</c><00:00:43.800><c> both</c><00:00:44.340><c> are</c><00:00:44.700><c> Ira</c>
+
+00:00:44.990 --> 00:00:45.000 align:start position:0%
+4.19 over spot and finally both are Ira
+ 
+
+00:00:45.000 --> 00:00:46.790 align:start position:0%
+4.19 over spot and finally both are Ira
+eligible<00:00:45.480><c> if</c><00:00:46.140><c> you'd</c><00:00:46.260><c> like</c><00:00:46.440><c> to</c><00:00:46.559><c> learn</c><00:00:46.620><c> more</c>
+
+00:00:46.790 --> 00:00:46.800 align:start position:0%
+eligible if you'd like to learn more
+ 
+
+00:00:46.800 --> 00:00:49.430 align:start position:0%
+eligible if you'd like to learn more
+about<00:00:47.040><c> a</c><00:00:47.160><c> precious</c><00:00:47.460><c> metals</c><00:00:47.760><c> Ira</c><00:00:48.059><c> call</c><00:00:48.719><c> us</c><00:00:48.899><c> and</c>
+
+00:00:49.430 --> 00:00:49.440 align:start position:0%
+about a precious metals Ira call us and
+ 
+
+00:00:49.440 --> 00:00:50.510 align:start position:0%
+about a precious metals Ira call us and
+we'll<00:00:49.620><c> be</c><00:00:49.739><c> happy</c><00:00:49.860><c> to</c><00:00:50.039><c> help</c><00:00:50.100><c> you</c><00:00:50.280><c> in</c><00:00:50.399><c> that</c>
+
+00:00:50.510 --> 00:00:50.520 align:start position:0%
+we'll be happy to help you in that
+ 
+
+00:00:50.520 --> 00:00:51.410 align:start position:0%
+we'll be happy to help you in that
+process
+
+00:00:51.410 --> 00:00:51.420 align:start position:0%
+process
+ 
+
+00:00:51.420 --> 00:00:54.170 align:start position:0%
+process
+our<00:00:51.899><c> number</c><00:00:52.079><c> for</c><00:00:52.260><c> all</c><00:00:52.379><c> orders</c><00:00:52.739><c> is</c><00:00:53.180><c> 1-8881</c>
+
+00:00:54.170 --> 00:00:54.180 align:start position:0%
+our number for all orders is 1-8881
+ 
+
+00:00:54.180 --> 00:00:57.010 align:start position:0%
+our number for all orders is 1-8881
+Liberty<00:00:54.660><c> that's</c>
+
+00:00:57.010 --> 00:00:57.020 align:start position:0%
+Liberty that's
+ 
+
+00:00:57.020 --> 00:00:59.330 align:start position:0%
+Liberty that's
+1-88-815-4237<00:00:58.020><c> we're</c><00:00:58.800><c> available</c><00:00:58.980><c> after</c>
+
+00:00:59.330 --> 00:00:59.340 align:start position:0%
+1-88-815-4237 we're available after
+ 
+
+00:00:59.340 --> 00:01:01.010 align:start position:0%
+1-88-815-4237 we're available after
+hours<00:00:59.579><c> and</c><00:00:59.879><c> on</c><00:01:00.059><c> weekends</c><00:01:00.480><c> and</c><00:01:00.719><c> we</c><00:01:00.840><c> look</c>
+
+00:01:01.010 --> 00:01:01.020 align:start position:0%
+hours and on weekends and we look
+ 
+
+00:01:01.020 --> 00:01:31.429 align:start position:0%
+hours and on weekends and we look
+forward<00:01:01.260><c> to</c><00:01:01.559><c> speaking</c><00:01:01.860><c> with</c><00:01:02.039><c> you</c>
+
+00:01:31.429 --> 00:01:31.439 align:start position:0%
+ 
+ 
+
+00:01:31.439 --> 00:01:33.619 align:start position:0%
+ 
+thank<00:01:31.619><c> you</c>
+
