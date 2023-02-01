@@ -5,6 +5,7 @@ import datetime
 import re 
 import time 
 # sets up logger 
+# old utils 
 
 def measure_time(func):
     def wrapper(*args, **kwargs):
@@ -27,7 +28,7 @@ def setup_logger(name, log_file, level=logging.INFO):
     return logger
 
 # logs a variable so i can read it 
-def log_variable(logger,var,msg='',wait=False,lvl='info'):
+def log_variablex(logger,var,msg='',wait=False,lvl='info'):
     ts=datetime.datetime.now().isoformat()
     if var is None:
         var='None'

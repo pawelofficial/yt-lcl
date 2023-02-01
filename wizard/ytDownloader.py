@@ -57,7 +57,6 @@ class ytDownloader:
             log_variable(logger=self.logger,var=q,msg='subprocess query returncode !=0 ',lvl='warning')
 
 
-
     # returns dictionary with info about last n videos found on a channel 
     # d = {'video_id':'upload_date'} date is in YYYYMMDD ufortunately :< 
     @measure_time
@@ -185,9 +184,9 @@ if __name__=='__main__':
     urls=['https://www.youtube.com/watch?v=MMI9_Mv8aZA']
     urls=['https://www.youtube.com/watch?v=kh5dN72GTQ8']
     urls=['https://www.youtube.com/watch?v=ENwb4vWeHc0']
+    urls=['https://www.youtube.com/watch?v=BsNP5ygW-AM']
 #    urls=['https://www.youtube.com/watch?v=05TbPI4CoAY&ab_channel=JREDaily']
-    ts=["00:00:30","00:0:50"]
-    ts=[None,None]
+    ts=["00:02:40","00:03:10"]
     for url in urls:
         ytd.download_vid(yt_url=url,timestamps=ts)
 #        ytd.download_vid(yt_url=url,timestamps=ts,subs_only=False)

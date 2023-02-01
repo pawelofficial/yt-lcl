@@ -1,0 +1,3 @@
+file 'c:\\\\Users\\\\zdune\\\\Documents\\\\moonboy\\\\speech-enhancer\\\\speech-enhancer\\\\src2\\\\tmp\\\\vids\\000_f11d469fec376a82d1403b4e9a33e873cc257931eafa85b29188abd8182c2bc0.wav'
+file 'c:\\\\Users\\\\zdune\\\\Documents\\\\moonboy\\\\speech-enhancer\\\\speech-enhancer\\\\src2\\\\tmp\\\\vids\\001_b2969707c4c214c815f1391ed8f683298cb9e78afafab7985563574e8b2701f6.wav'
+file 'c:\\\\Users\\\\zdune\\\\Documents\\\\moonboy\\\\speech-enhancer\\\\speech-enhancer\\\\src2\\\\tmp\\\\vids\\002_beb10e0674d6b661bcec0b947fc1384b91c1573ef13f3691da4f8d2ccd4525f1.wav'
