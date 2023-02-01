@@ -1,3 +1,1 @@
-# speech-enhancer
-hopefully a speech enhancer project 
-yay
+yet another pet project - bringing yt content to foreign languages 
