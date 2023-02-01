@@ -2,6 +2,7 @@ src2/tmp/vids*
 src2/tmp/secrets*
 src2/tmp/vids1/*
 src/tmp/vids/*
+*.mp3
 secrets/*
 vids/*
 # Byte-compiled / optimized / DLL files
