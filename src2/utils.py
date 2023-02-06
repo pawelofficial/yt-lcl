@@ -4,6 +4,8 @@ import logging
 import datetime 
 import re 
 import pandas as pd 
+import json 
+import numpy as np 
 # class for utilities things 
 class utils:
     def __init__(self) -> None:
@@ -21,7 +23,7 @@ class utils:
         exist=os.path.exists(path)
         if meta:    # if meta returns metadata about filepath 
             return path, (isfile,isdir,exist)
-        return path
+        return path.replace('\\\\\\','\\\\')
     
     # sets up logger object for logging 
     def setup_logger(self,name, log_file, level=logging.INFO,mode='w'):
@@ -134,8 +136,9 @@ class utils:
     def flt_to_ts(self,ff = None ):
         hh=ff/60/60//1
         mm=(ff-hh*60*60)/60//1
-        ss=(ff-hh*60*60-mm*60)
-        return '{:02d}:{:02d}:{:02d}'.format(int(hh), int(mm), int(ss))
+        ss=(ff-hh*60*60-mm*60)//1
+        fff=(ff-hh*60*60-mm*60-ss)*1000
+        return '{:02d}:{:02d}:{:02d}.{:03d}'.format(int(hh), int(mm), int(ss),int(fff))
     
     # clears tmp directory or other directory 
     def clear_tmp(self,*args):
@@ -148,3 +151,20 @@ class utils:
             isfile=meta[0]
             if isfile:
                 os.remove(fp)
+
+        
+    
+        
+            
+          
+            
+#        print(tmp_df)
+#            print(next_subs_d)
+#            
+#            if subs_d['en']==next_subs_d['en']:
+#                self.subs_d['txt']+=' '+next_subs_d['txt']      # concatenating 
+#                
+#            elif self.subs_d['txt']!='\n':
+#                self.df_insert_d(df=tmp_df,d=self.subs_d)
+#            
+                

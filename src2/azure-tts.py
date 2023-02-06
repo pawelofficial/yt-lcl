@@ -15,6 +15,8 @@ import math
 class azure_tts(utils):
     def __init__(self) -> None:
         super().__init__()
+        self.tmp_dir=self.path_join('tmp','david','vids') # path to tmp dir 
+        
         self.logger=self.setup_logger(name='azure_tts_logger',log_file='azure_tts_logger.log')
         self.resource="tts-1"
         self.config_json=self.path_join('secrets','azure.json')
@@ -39,6 +41,7 @@ class azure_tts(utils):
         
         self.lang='pl'
         self.lang_shortname=self.find_voices(key='LocalName',value=self.localnames[self.lang])[1][0]
+
         self.text=self.dummy_texts[self.lang]
 
         self.ssml_fp=self.path_join('tmp','ssml.xml')
@@ -214,6 +217,7 @@ class azure_tts(utils):
         r=requests.get(url,headers=headers)
         local_voices_d={}
         shortnames=[]
+
         for d in r.json():
             try:
                 your_key=d[key].upper()
@@ -255,7 +259,7 @@ if __name__=='__main__':
     a=azure_tts()
     a.set_lang='pl'
     a.clear_tmp('tmp','vids')
-
+    exit(1)
     df_name='agg.csv'
     a.read_df(df_name=df_name)
     a.translate_df()

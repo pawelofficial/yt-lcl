@@ -54,20 +54,68 @@ def test_make_subs_df():
     fpp,meta=i.path_join('tmp',subs_df_fp,meta=True)        # check if it's there 
     assert i.subs_df is not None  and meta[0] == True 
     
-@pytest.mark.dev
-def test_aggregate_subs_df():
-    """parses subs to df - needs subs file in /tmp """
-    i=ytd.ytd()
-    f='RANDALL_CARLSON__GRAHAM_HANCOCK_ON_LOST_TECHNOLOGY_AND_THE_GREAT_PYRAMIDS.pl.vtt'
-    fp=i.path_join('tmp',f)
-    i.subs_fp=fp
-    print(1)
-    subs_df,subs_df_fp=i.make_subs_df()                     # make subs df 
-    print(2)
-    i.aggregate_subs_df(df=subs_df)
-    print(3)
+
     
+@pytest.mark.dev
+def test_read_json3_to_df():
+    # reads example json3 to a df 
+    i=ytd.ytd()
+    f='DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.en.json3'
+    fp=i.path_join('tests',f)
+    df=i.read_json3_to_df(fp=fp)
+    assert len(df)==745
+    
+@pytest.mark.dev    
+def test_concat_duplicate_rows():
+    # reads example json3 to df and concats ambigous rows
+    i=ytd.ytd()
+    f='DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.en.json3'
+    fp=i.path_join('tests',f)
+    df=i.read_json3_to_df(fp=fp)
+    df2=i.concat_duplicate_rows(df=df)
+    assert len(df2)<len(df) and len(df2)!=0
+    
+def test_concat_overlapping_rows():
+    # reads example json3 to df and concats ambigous rows
+    i=ytd.ytd()
+    f='DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.en.json3'
+    fp=i.path_join('tests',f)
+    df=i.read_json3_to_df(fp=fp)
+    df2=i.concat_duplicate_rows(df=df)
+    df3=i.concat_overlapping_rows(df=df2)
+    assert len(df3)<len(df2) and len(df3)!=0
+      
+def test_concat_short_rows():
+    # reads example json3 to df and concats ambigous rows
+    i=ytd.ytd()
+    f='DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.en.json3'
+    fp=i.path_join('tests',f)
+    df=i.read_json3_to_df(fp=fp)
+    df2=i.concat_duplicate_rows(df=df)
+    df3=i.concat_overlapping_rows(df=df2)
+    df4=i.concat_short_rows(df=df3)
+    assert len(df4)<len(df3) and len(df4)!=0
+
+def test_parse_json3_to_df():
+    # reads example json3 to df and concats ambigous rows
+    i=ytd.ytd()
+    f='DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.en.json3'
+    fp=i.path_join('tests',f)
+    df=i.read_json3_to_df(fp=fp)
+    df2=i.concat_duplicate_rows(df=df)
+    df3=i.concat_overlapping_rows(df=df2)
+    df4=i.concat_short_rows(df=df3)
+    df5=i.parse_json3_to_df(fp=fp)
+    assert len(df5)==len(df4) and len(df4)!=0
+
+        
 if __name__=='__main__':
     print('tests')
 #    test_download_vid()
-    test_aggregate_subs_df()
+#    test_clean_line()
+#    test_read_json3_to_df()
+#    test_concat_overlapping_rows()
+#    test_concat_short_rows()
+    test_parse_json3_to_df()
+
+#    test_concat_duplicate_rows()
