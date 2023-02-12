@@ -119,8 +119,9 @@ def test_split_rows(files : list  = None ):
         elif 'json3' in ext:
             df=i.read_json3_to_df(fp=fp)                                    
         df=i.split_rows(df=df)
+        df=i.concat_short_rows(df=df)
         out_fp,_=i.strip_extension(s=f)
-        out_fp=i.path_join(i.tmp_dir,'df_out_split_rows.csv')
+        out_fp=i.path_join(i.tmp_dir,'df_concat_short_rows.csv')
         print(out_fp)
         i.dump_df(df=df,fp=out_fp)
     

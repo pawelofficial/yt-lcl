@@ -148,7 +148,7 @@ class ytd(utils):
         
     # 4th step in subs parsing 
     def concat_short_rows(self,df):    
-        cond=lambda prev_row,cur_row,next_row  : len(cur_row['txt'].strip().split(' '))==1 
+        cond=lambda prev_row,cur_row,next_row  : len(cur_row['txt'].strip().split(' '))==1
         df=self._concat_on_condition(df=df,cond=cond)
         self.tmp_df=df 
         self._calculate_pause_to_next(df=self.tmp_df)
@@ -194,15 +194,24 @@ class ytd(utils):
                 next_row=df.iloc[no+1].to_dict()       
 
             if b:                                                         # if concat happened
+                print(prev_row)
+                print(cur_row)
+                print(next_row)
+
+#                input('xxx')
                 last_row=df.iloc[j].to_dict()                             # this row <concat rows 
                 future_row=df.iloc[max(indexes_to_remove)+1].to_dict()    # concat rows> this row 
                 dif1=min_st_flt- last_row['en_flt']
                 dif2=future_row['st_flt'] - max_en_flt  
-                if dif1<=dif2 and b : # move concat rows to last row        
+                print(dif1,dif2)
+                print(last_row)
+                print(future_row)
+                print(dif1,dif2)
+                if dif1<dif2 and b : # move concat rows to last row        
                     last_row['txt']=last_row['txt'] + ' ' + txt 
                     last_row['en_flt']=max_en_flt
                     df.loc[j]=last_row
-                elif dif1 > dif2 and b: 
+                elif dif1 >= dif2 and b: 
                     future_row['txt'] = txt + ' ' + future_row['txt']
                     future_row['st_flt']=min_st_flt
                     df.loc[no]=future_row
@@ -253,7 +262,7 @@ class ytd(utils):
         self._calculate_pause_to_next(df=df)  
         self.tmp_df=df 
         print(df)
-        input('wait')
+
         return df
     
     def _split_on_condition(self,df,cond,split_fun):
