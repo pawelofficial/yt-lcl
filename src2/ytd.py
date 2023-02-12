@@ -271,7 +271,7 @@ class ytd(utils):
             
             second_row=df.iloc[1].to_dict()
             second_row['txt']=row2['txt'] + ' ' + second_row['txt']
-            second_row['st_flt']=row2['st_flt']
+            second_row['st_flt']=first_row['en_flt']
             # update first and second row 
             df.loc[0]=first_row
             df.loc[1] = second_row                       
@@ -302,7 +302,7 @@ class ytd(utils):
                 prev_row['en_flt']=row1['en_flt']                
                 # remove stuff moved above from cur row 
                 cur_row['txt']=row2['txt']
-                cur_row['en_flt']=row2['en_flt']
+                cur_row['st_flt']=prev_row['en_flt']
                 df.loc[no-1]=prev_row
                 df.loc[no]=cur_row
                 df.reset_index(inplace=True,drop=True)

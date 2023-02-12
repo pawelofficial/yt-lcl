@@ -50,6 +50,7 @@ def test_read_json3_to_df(files : list  = None ):
     i=ytd.ytd()
     if files is None:
         files=['DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.en.json3']
+        files=['PEOPLE_BECOME_IMMORTAL_BUT_EACH_PERSON_CAN_LIVE_ONLY_26_YEARS_UNLESS_THEY_EARN_MORE_TIME.pl-en.json3']
     i.tmp_dir=i.path_join('tests','tests_output')
     for f in files:
         fp=i.path_join('tests',f)
@@ -127,7 +128,7 @@ def test_split_rows(files : list  = None ):
 if __name__=='__main__':
     print('tests')
 
-#    test_read_json3_to_df()
+    test_read_json3_to_df()
 #    test_concat_overlapping_rows()
     test_split_rows()
 #    test_concat_short_rows()
