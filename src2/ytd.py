@@ -220,17 +220,13 @@ class ytd(utils):
     
     def split_rows(self,df):
         def has_dot_in_middle(prev_row,cur_row,next_row): # function checking if row should be splitted 
-            foo= '. ' in cur_row['txt']
-            bar=' .' in cur_row ['txt']
+            foo= '. ' in cur_row['txt'] #or ', ' in cur_row['txt']
+            bar=' .' in cur_row ['txt'] #or ' ,' in cur_row['txt']
             return foo or bar
             
-            #string=cur_row['txt'].replace(' ','') 
-            #pattern = r'^\w+\.\w+$'
-            #pattern = r'^\w+[.,-]\w+$'
-            #match = re.match(pattern, string)
-            #return match is not None
         def extract_words(string): # function splitting text 
-            chars=['. ',',','-']
+            chars=['. ',', ','-']
+            chars=['. ','-']
             for char in chars:
                 if char in string: 
                     return string.split(char)[0].strip()+char.strip(),string.split(char)[1].strip()
@@ -239,16 +235,13 @@ class ytd(utils):
             row2=row.copy()
             row1['txt'],row2['txt']=extract_words(row['txt'])
             w1 = len(row1['txt'])/ ( len(row2['txt']) + len(row1['txt']) ) 
-            row1['dif']=row1['en_flt']-row2['st_flt']
-            row1['en_flt']=row1['en_flt'] - row1['dif'] * w1 
-            row2['st_flt']=row1['en_flt']
+            
+            row1['dif']=np.round(row1['en_flt']-row2['st_flt'],2)
+            row1['en_flt']=np.round(row1['en_flt'] - row1['dif'] * w1 ,2)
+            row2['st_flt']=np.round(row1['en_flt'],2)
             return row1,row2
             
             
-        df=self._split_on_condition(df=df,cond=has_dot_in_middle,split_fun=split_fun)
-        pd.options.display.max_colwidth = 100
-        print(df)
-        
         df=self._split_on_condition(df=df,cond=has_dot_in_middle,split_fun=split_fun)
         pd.options.display.max_colwidth = 100
         print(df)
@@ -256,9 +249,11 @@ class ytd(utils):
         df['st']=df['st_flt'].apply(self.flt_to_ts)
         df['en']=df['en_flt'].apply(self.flt_to_ts)
         df['dif']=np.round(df['en_flt']-df['st_flt'],2)
+        
         self._calculate_pause_to_next(df=df)  
         self.tmp_df=df 
         print(df)
+        input('wait')
         return df
     
     def _split_on_condition(self,df,cond,split_fun):
