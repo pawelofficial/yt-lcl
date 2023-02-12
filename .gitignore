@@ -4,6 +4,8 @@ src2/tmp/vids1/*
 src/tmp/vids/*
 *.mp3
 *.webm
+*.wav
+*.csv
 secrets/*
 vids/*
 # Byte-compiled / optimized / DLL files
