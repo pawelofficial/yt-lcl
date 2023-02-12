@@ -149,8 +149,6 @@ class ytd(utils):
     # 4th step in subs parsing 
     def concat_short_rows(self,df):    
         cond=lambda prev_row,cur_row,next_row  : len(cur_row['txt'].strip().split(' '))==1 
-
-        
         df=self._concat_on_condition(df=df,cond=cond)
         self.tmp_df=df 
         self._calculate_pause_to_next(df=self.tmp_df)
@@ -158,7 +156,6 @@ class ytd(utils):
     
     # moving a row up or down based on condition on that row 
     def _concat_on_condition(self,df,cond):
-        #print(df)
         indexes_to_remove=[]
         no=1
         min_st_flt=df.iloc[0]['st_flt']
@@ -173,7 +170,7 @@ class ytd(utils):
             second_row['st_flt']=first_row['st_flt']
             df.iloc[1]=second_row
 
-        # does not catch first and last row 
+        # does not catch first row
         while no < len(df)-1:
             prev_row=df.iloc[no-1].to_dict()
             cur_row=df.iloc[no].to_dict()
@@ -184,7 +181,6 @@ class ytd(utils):
             b=0
             j=no-1
             while cond(prev_row,cur_row,next_row):
-                #print(cur_row,' fffffffffffffff')
                 b=1
                 txt+= cur_row['txt'] + ' '         # aggregating text 
                 max_en_flt=cur_row['en_flt']           # catching end flt 
@@ -202,16 +198,11 @@ class ytd(utils):
                 future_row=df.iloc[max(indexes_to_remove)+1].to_dict()    # concat rows> this row 
                 dif1=min_st_flt- last_row['en_flt']
                 dif2=future_row['st_flt'] - max_en_flt  
-            
                 if dif1<=dif2 and b : # move concat rows to last row        
-                    #print(last_row, 'last row ')
-                    #input('xxx')
                     last_row['txt']=last_row['txt'] + ' ' + txt 
                     last_row['en_flt']=max_en_flt
                     df.loc[j]=last_row
                 elif dif1 > dif2 and b: 
-                    #print(future_row,'future row')
-                    #input('yyy')
                     future_row['txt'] = txt + ' ' + future_row['txt']
                     future_row['st_flt']=min_st_flt
                     df.loc[no]=future_row
@@ -225,7 +216,111 @@ class ytd(utils):
         df['en']=df['en_flt'].apply(self.flt_to_ts)
         self._calculate_pause_to_next(df=df)        
         return df 
+    
+    
+    def split_rows(self,df):
+        def has_dot_in_middle(prev_row,cur_row,next_row): # function checking if row should be splitted 
+            foo= '. ' in cur_row['txt']
+            bar=' .' in cur_row ['txt']
+            return foo or bar
+            
+            #string=cur_row['txt'].replace(' ','') 
+            #pattern = r'^\w+\.\w+$'
+            #pattern = r'^\w+[.,-]\w+$'
+            #match = re.match(pattern, string)
+            #return match is not None
+        def extract_words(string): # function splitting text 
+            chars=['. ',',','-']
+            for char in chars:
+                if char in string: 
+                    return string.split(char)[0].strip()+char.strip(),string.split(char)[1].strip()
+        def split_fun(row): # function splitting rows 
+            row1=row.copy()
+            row2=row.copy()
+            row1['txt'],row2['txt']=extract_words(row['txt'])
+            w1 = len(row1['txt'])/ ( len(row2['txt']) + len(row1['txt']) ) 
+            row1['dif']=row1['en_flt']-row2['st_flt']
+            row1['en_flt']=row1['en_flt'] - row1['dif'] * w1 
+            row2['st_flt']=row1['en_flt']
+            return row1,row2
+            
+            
+        df=self._split_on_condition(df=df,cond=has_dot_in_middle,split_fun=split_fun)
+        pd.options.display.max_colwidth = 100
+        print(df)
         
+        df=self._split_on_condition(df=df,cond=has_dot_in_middle,split_fun=split_fun)
+        pd.options.display.max_colwidth = 100
+        print(df)
+        df.reset_index(inplace=True)
+        df['st']=df['st_flt'].apply(self.flt_to_ts)
+        df['en']=df['en_flt'].apply(self.flt_to_ts)
+        df['dif']=np.round(df['en_flt']-df['st_flt'],2)
+        self._calculate_pause_to_next(df=df)  
+        self.tmp_df=df 
+        print(df)
+        return df
+    
+    def _split_on_condition(self,df,cond,split_fun):
+        df2=pd.DataFrame(columns=df.columns)
+        indexes_to_remove=[]
+        b=True
+        no=0
+        
+        # first row 
+        first_row=df.iloc[0].to_dict()
+        if cond(first_row,first_row,first_row):
+            row1,row2=split_fun(first_row)
+            first_row['txt']=row1['txt']
+            first_row['en_flt']=row1['en_flt']
+            
+            second_row=df.iloc[1].to_dict()
+            second_row['txt']=row2['txt'] + ' ' + second_row['txt']
+            second_row['st_flt']=row2['st_flt']
+            # update first and second row 
+            df.loc[0]=first_row
+            df.loc[1] = second_row                       
+        
+        # last row 
+        last_row=df.iloc[-1].to_dict()
+        if cond(last_row,last_row,last_row):
+            second_to_last_row=df.iloc[-2].to_dict()
+            row1,row2=split_fun(last_row)
+            second_to_last_row['txt']=second_to_last_row['txt'] + ' ' +  row1['txt']
+            second_to_last_row['en_flt']=row1['en_flt']
+            last_row['txt']=row2['txt']
+            df.iloc[-1]=last_row
+            df.iloc[-2]=second_to_last_row
+            
+            
+        while no <len(df)-2:
+            no+=1
+            prev_row=df.iloc[no-1].to_dict()
+            cur_row=df.iloc[no].to_dict()
+            next_row=df.iloc[no+1].to_dict() # not used
+            if cond(cur_row,cur_row,cur_row):
+#                input('here')
+                indexes_to_remove.append(no)
+                row1,row2=split_fun(cur_row)
+                # move stuff with dot to prior row 
+                prev_row['txt']=prev_row['txt'] + ' ' + row1['txt']
+                prev_row['en_flt']=row1['en_flt']                
+                # remove stuff moved above from cur row 
+                cur_row['txt']=row2['txt']
+                cur_row['en_flt']=row2['en_flt']
+                df.loc[no-1]=prev_row
+                df.loc[no]=cur_row
+                df.reset_index(inplace=True,drop=True)
+                #df=df
+                #print(indexes_to_remove)
+                #df=df.drop(indexes_to_remove)
+                df['st']=df['st_flt'].apply(self.flt_to_ts)
+                df['en']=df['en_flt'].apply(self.flt_to_ts)
+                
+        return df  
+     
+    
+    # tbd     
     # step bringing all parsing methods together  parsing steps together 
     def parse_json3_to_df(self,fp,dump_df=True,**kwargs):
         # step 1 

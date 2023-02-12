@@ -101,12 +101,35 @@ def test_concat_overlapping_rows(files : list  = None ):
         print(out_fp)
         i.dump_df(df=df,fp=out_fp)
     
+@pytest.mark.ytd
+def test_split_rows(files : list  = None ):
+    # reads example json3 to a df 
+    i=ytd.ytd()
+    if files is None:
+        files=['DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.en.json3','test_concat_overlapping_rows.csv']
+        files=['PEOPLE_BECOME_IMMORTAL_BUT_EACH_PERSON_CAN_LIVE_ONLY_26_YEARS_UNLESS_THEY_EARN_MORE_TIME.pl-en.json3']
+#        files=['test_split_rows.csv']
+    i.tmp_dir=i.path_join('tests','tests_output')
+    for f in files:
+        fp=i.path_join('tests',f)
+        core,ext=i.strip_extension(s=f)
+        if 'csv' in ext:
+            df=i.read_csv(fp)
+        elif 'json3' in ext:
+            df=i.read_json3_to_df(fp=fp)                                    
+        df=i.split_rows(df=df)
+        out_fp,_=i.strip_extension(s=f)
+        out_fp=i.path_join(i.tmp_dir,'df_out_split_rows.csv')
+        print(out_fp)
+        i.dump_df(df=df,fp=out_fp)
+    
         
 if __name__=='__main__':
     print('tests')
 
 #    test_read_json3_to_df()
-    test_concat_overlapping_rows()
+#    test_concat_overlapping_rows()
+    test_split_rows()
 #    test_concat_short_rows()
 #    test_concat_overlapping_rows()
 #    test_concat_short_rows()

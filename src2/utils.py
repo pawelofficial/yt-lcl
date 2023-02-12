@@ -164,7 +164,7 @@ class utils:
                 os.remove(fp)
 
     def read_csv(self,fp):
-        df=pd.read_csv(filepath_or_buffer=fp,quoting=1,delimiter='|')
+        df=pd.read_csv(filepath_or_buffer=fp,quoting=1,delimiter='|',index_col=0)
         return df 
         
     def dump_df(self,df,name = None ,fp = None ):
