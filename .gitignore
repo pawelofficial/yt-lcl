@@ -5,6 +5,7 @@ src/tmp/vids/*
 *.mp3
 *.webm
 *.wav
+*.part
 *.csv
 secrets/*
 vids/*
