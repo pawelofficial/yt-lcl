@@ -105,6 +105,7 @@ class utils:
         return d
     # strips extension from a file and changes it to new_ext 
     def strip_extension_old(self,s: str, new_ext = None ):
+        s=s.strip()
         ext_reg=r'^([^.]+)'
         s= re.findall(ext_reg,s)[0]
         if new_ext is None:
@@ -113,7 +114,10 @@ class utils:
         return s.replace('..','.')
     
     def strip_extension(self,s : str,new_ext=''):
-        match = re.search(r"([^.]+)\.([^.]+)\.([^.]+)", s)
+        s=s.strip()
+        reg=r"([^.]+)(?:\.([^.]+))?(?:\.([^.]+))?"
+        #match = re.search(r"([^.]+)\.([^.]+)\.([^.]+)", s)
+        match=re.search(reg,s)
         core=match.groups(0)[0]+new_ext
         ext=[i for i in match.groups(0)][1:]
         return core,ext
@@ -141,6 +145,13 @@ class utils:
         return '{:02d}:{:02d}:{:02d}.{:03d}'.format(int(hh), int(mm), int(ss),int(fff))
     
     # clears tmp directory or other directory 
+    def clear_dir(self,fp):
+        files=os.listdir(fp)
+        for file in files:
+            fpp=self.path_join(fp,file)
+            os.remove(fpp)
+    
+    
     def clear_tmp(self,*args):
         if args==():
             args=('tmp',)
@@ -152,9 +163,26 @@ class utils:
             if isfile:
                 os.remove(fp)
 
+    def read_csv(self,fp):
+        df=pd.read_csv(filepath_or_buffer=fp,quoting=1,delimiter='|')
+        return df 
         
+    def dump_df(self,df,name = None ,fp = None ):
+        if fp is None:
+            fp=self.path_join(self.tmp_dir,name)
+        df.to_csv(path_or_buf=fp,sep='|',quoting=1,mode='w')
     
+    # makes a directory 
+    def make_dir(self,fp):
+        if os.path.exists(fp):
+            files=os.listdir(fp)
+            for file in files:
+                    fpp=self.path_join(fp,file)
+                    os.remove(fpp)
         
+        if not os.path.exists(fp):
+            os.makedirs(fp)
+        return fp 
             
           
             
