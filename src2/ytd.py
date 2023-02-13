@@ -139,8 +139,8 @@ class ytd(utils):
         return tmp_df
     
     # 4th step in subs parsing 
-    def concat_overlapping_rows(self,df):    
-        cond=lambda prev_row,cur_row,next_row  : cur_row['pause_flt']<=0
+    def concat_overlapping_rows(self,df,N=0):    
+        cond=lambda prev_row,cur_row,next_row  : cur_row['pause_flt']<=N
         df=self._concat_on_condition(df=df,cond=cond)
         self.tmp_df=df 
         self._calculate_pause_to_next(df=self.tmp_df)
@@ -156,6 +156,23 @@ class ytd(utils):
     
     # moving a row up or down based on condition on that row 
     def _concat_on_condition(self,df,cond):
+        # check if all rows meet the condition 
+        cnt=0
+        txt=''
+        for no,row in df.iterrows():
+            txt+=row['txt'] + ' '       # aggreate text just in case 
+            cnt += cond(row,row,row)
+        if cnt == len(df): # whols df matched condition 
+            first_row=df.iloc[0].to_dict()
+            last_row=df.iloc[-1].to_dict()
+            first_row['en_flt']=last_row['en_flt']
+            first_row['en']=last_row['en']
+            first_row['txt']=txt.strip().replace('  ',' ')
+            df=pd.DataFrame(first_row,index=[0])
+            return df 
+            
+        
+        
         indexes_to_remove=[]
         no=1
         min_st_flt=df.iloc[0]['st_flt']
@@ -181,6 +198,8 @@ class ytd(utils):
             b=0
             j=no-1
             while cond(prev_row,cur_row,next_row):
+                print('---')
+                print(df)
                 b=1
                 txt+= cur_row['txt'] + ' '         # aggregating text 
                 max_en_flt=cur_row['en_flt']           # catching end flt 
@@ -206,7 +225,7 @@ class ytd(utils):
                 print(dif1,dif2)
                 print(last_row)
                 print(future_row)
-                print(dif1,dif2)
+                print(dif1,dif2,j,no)
                 if dif1<dif2 and b : # move concat rows to last row        
                     last_row['txt']=last_row['txt'] + ' ' + txt 
                     last_row['en_flt']=max_en_flt
@@ -216,6 +235,16 @@ class ytd(utils):
                     future_row['st_flt']=min_st_flt
                     df.loc[no]=future_row
             
+            if no==len(df)-1:
+                print('last row?')
+                print(txt)
+                print(no)
+                print(df)
+                print(indexes_to_remove)
+                input('wait')
+            
+            
+            
             txt='' # reset txt 
             no+=1
             
@@ -223,7 +252,8 @@ class ytd(utils):
         df.reset_index(inplace=True)
         df['st']=df['st_flt'].apply(self.flt_to_ts)
         df['en']=df['en_flt'].apply(self.flt_to_ts)
-        self._calculate_pause_to_next(df=df)        
+        self._calculate_pause_to_next(df=df)   
+        self.clear_df(df=df)     
         return df 
     
     
@@ -339,6 +369,8 @@ class ytd(utils):
             if name is None:
                 name='df_parsed.csv'
             self.dump_df(df=df,name=name)
+            
+        
         return df  
     
     # calculates pause to next row 
@@ -347,8 +379,28 @@ class ytd(utils):
         b=df['st_flt'].shift(-1)
         df['pause_flt']=np.round(b-a,2)
 #        df.iloc[-1]['pause_flt']=0
-        df.loc[len(df)-1,'pause_flt']=1.0
+        df.loc[len(df)-1,'pause_flt']=0
         return a-b
+
+    
+    def sentesize(self,df):
+        def func(s):
+            s=s.capitalize()
+            if s[-1]=='.':
+                return s 
+            else:
+                return s+'.'    
+        self.clear_df(df=df,func=func)
+
+    def clear_df(self,df,func = None ):
+        if func is None:
+            func = lambda x: x.replace('  ',' ')
+        
+        for no,row in df.iterrows():
+            row=row.to_dict()
+            row['txt']=func(row['txt'])
+            df.loc[no]=row
+                    
 
 
    
@@ -357,18 +409,21 @@ def wf1(ytd: ytd
         ,url='https://www.youtube.com/watch?v=_ypD5iacrnI&ab_channel=MovieRecaps'
         ,download_timestamps=True,
         download_vid=False):
+
+
     dir_name=datetime.datetime.now().strftime("%Y%m%d")     # make a dir 
     dir_fp=ytd.path_join(ytd.tmp_dir, dir_name)             # make a dir 
     
     #ytd.make_dir(fp=dir_fp)    # let's make a dir
     ytd.tmp_dir= dir_fp                                     # set a dir 
 
-    if download_timestamps and download_vid:                       # speeds up download fren 
+    if download_timestamps and download_vid:  
+        input('here')# speeds up download fren 
         timestamps=["00:00:00","00:1:00"]
         ytd.download_vid(yt_url=url,timestamps=timestamps)
-    else:
-        ytd.download_vid(yt_url=url)                        # download whole thing 
-    ytd.download_subs(yt_url=url,lang='en')              # download subs 
+    
+    # download whole thing 
+    ytd.download_subs(yt_url=url,lang='pl')              # download subs 
     ytd.parse_json3_to_df(fp=ytd.subs_fp,dump_all=True)     # parse subs, dump all 
     
         

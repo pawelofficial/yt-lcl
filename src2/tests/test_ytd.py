@@ -67,6 +67,7 @@ def test_concat_overlapping_rows(files : list  = None ):
     i=ytd.ytd()
     if files is None:
         files=['DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.en.json3','test_concat_overlapping_rows.csv']
+        files=[files[-1]]
     i.tmp_dir=i.path_join('tests','tests_output')
     for f in files:
         fp=i.path_join('tests',f)
@@ -82,7 +83,7 @@ def test_concat_overlapping_rows(files : list  = None ):
         i.dump_df(df=df,fp=out_fp)
 
 @pytest.mark.ytd
-def test_concat_overlapping_rows(files : list  = None ):
+def test_concat_short_rows(files : list  = None ):
     # reads example json3 to a df 
     i=ytd.ytd()
     if files is None:
@@ -126,9 +127,43 @@ def test_split_rows(files : list  = None ):
         i.dump_df(df=df,fp=out_fp)
     
         
+def test_one():
+    # reads subs from json at does parsing on overlapping rows only 
+    # works well for movies with a lot of pauses 
+    f='DAVID_ATTENBOROUGHS__TASMANIA__WEIRD_AND_WONDERFUL.pl.json3'
+    i=ytd.ytd()
+    i.tmp_dir=i.path_join('tests')
+    fp=i.path_join(i.tmp_dir,f)
+    i.read_json3_to_df(fp=fp)
+    out_fp=i.path_join(i.tmp_dir,'df1.csv')
+    i.dump_df(df=i.tmp_df,fp=out_fp)    
+    i.concat_overlapping_rows(df=i.tmp_df,N=1)
+    i.sentesize(df=i.tmp_df)
+    out_fp=i.path_join(i.tmp_dir,'df2.csv')
+    i.dump_df(df=i.tmp_df,fp=out_fp)
+        
+        
+def test_two():
+    f='PEOPLE_BECOME_IMMORTAL_BUT_EACH_PERSON_CAN_LIVE_ONLY_26_YEARS_UNLESS_THEY_EARN_MORE_TIME.pl-en.json3'
+    i=ytd.ytd()
+    i.tmp_dir=i.path_join('tests')
+    fp=i.path_join(i.tmp_dir,f)
+    i.read_json3_to_df(fp=fp)
+    out_fp=i.path_join(i.tmp_dir,'df1.csv')
+    i.dump_df(df=i.tmp_df,fp=out_fp)    
+    i.concat_overlapping_rows(df=i.tmp_df,N=0)
+#    i.sentesize(df=i.tmp_df)
+    out_fp=i.path_join(i.tmp_dir,'df2.csv')
+    i.dump_df(df=i.tmp_df,fp=out_fp)
+        
 if __name__=='__main__':
     print('tests')
-
+    test_concat_overlapping_rows()
+    test_two()
+    exit(1)
+#    test_one()
+    test_two()
+    exit(1)
     test_read_json3_to_df()
 #    test_concat_overlapping_rows()
     test_split_rows()
