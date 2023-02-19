@@ -27,6 +27,7 @@ class ytd(utils):
     # downloads a vid to tmp directory 
     def download_vid(self,yt_url,timestamps = None ):
         d=self.parse_url(url=yt_url)
+        
         l=["yt-dlp","--skip-download",d['vid_url'],"--get-title"]
         raw_title=self.subprocess_run(l).replace(' ','_').replace('|','').upper()
         title=''.join(e for e in raw_title if e.isalnum() or e=='_' )
@@ -36,6 +37,7 @@ class ytd(utils):
             l+=["--download-sections",f"*{timestamps[0]}-{timestamps[1]}"]
         self.subprocess_out=self.subprocess_run(l)
         self.vid_fp=fp+'.webm'
+        self.vid_fname=title+'.webm'
         return self.vid_fp
 
     # checks if subs language is available 
@@ -119,6 +121,7 @@ class ytd(utils):
 #        input('wait')
         return subs_d
                 
+
     # 1st step in subs parsing - reads json into a df 
     # modifies self.tmp_df 
     def read_json3_to_df(self,fp):
@@ -139,250 +142,76 @@ class ytd(utils):
         return tmp_df
     
     # 4th step in subs parsing 
-    def concat_overlapping_rows(self,df,N=0):    
-        cond=lambda prev_row,cur_row,next_row  : cur_row['pause_flt']<=N
-        df=self._concat_on_condition(df=df,cond=cond)
+    def concat_overlapping_rows(self,df,N=0.5):    
+        def func(prev_row,cur_row): # func summing cur row to previous row 
+            prev_row['txt']=prev_row['txt']+' ' + cur_row['txt']
+            prev_row['en_flt']=cur_row['en_flt']
+            return prev_row,cur_row,True
+        
+        cond=lambda prev_row,cur_row  : cur_row['pause_flt']<=N
+        df=self._concat_on_condition(df=df,cond=cond,func=func)
+        self.sentesize(df=df)
         self.tmp_df=df 
         self._calculate_pause_to_next(df=self.tmp_df)
+        
         return df 
         
-    # 4th step in subs parsing 
-    def concat_short_rows(self,df):    
-        cond=lambda prev_row,cur_row,next_row  : len(cur_row['txt'].strip().split(' '))==1
-        df=self._concat_on_condition(df=df,cond=cond)
-        self.tmp_df=df 
-        self._calculate_pause_to_next(df=self.tmp_df)
-        return df 
-    
-    # moving a row up or down based on condition on that row 
-    def _concat_on_condition(self,df,cond):
-        # check if all rows meet the condition 
-        cnt=0
-        txt=''
-        for no,row in df.iterrows():
-            txt+=row['txt'] + ' '       # aggreate text just in case 
-            cnt += cond(row,row,row)
-        if cnt == len(df): # whols df matched condition 
-            first_row=df.iloc[0].to_dict()
-            last_row=df.iloc[-1].to_dict()
-            first_row['en_flt']=last_row['en_flt']
-            first_row['en']=last_row['en']
-            first_row['txt']=txt.strip().replace('  ',' ')
-            df=pd.DataFrame(first_row,index=[0])
-            return df 
-            
+    # concat on condition with a function !     
+    def _concat_on_condition(self,df,cond = None,func=None ):
+        #df2=pd.DataFrame(columns=df.columns)
+        ok_indexes=[0]                  # first row cant be moved up 
+        bad_indexes=[]
+        #df2.loc[0]=df.loc[0].to_dict()  # rewrite first row 
+        no=1                            # first row rewritten 
         
-        
-        indexes_to_remove=[]
-        no=1
-        min_st_flt=df.iloc[0]['st_flt']
-        max_en_flt=df.iloc[0]['en_flt']
-        txt=''
-        # catching first row  and moving it to second row if it meets condition 
-        first_row=df.iloc[0].to_dict()
-        second_row=df.iloc[1].to_dict()
-        if cond(first_row,first_row,second_row):
-            indexes_to_remove.append(0)
-            second_row['txt'] = first_row['txt'] + ' ' + second_row['txt']
-            second_row['st_flt']=first_row['st_flt']
-            df.iloc[1]=second_row
-
-        # does not catch first row
-        while no < len(df)-1:
+        df['index']=df.index
+        while no<len(df):
             prev_row=df.iloc[no-1].to_dict()
             cur_row=df.iloc[no].to_dict()
-            next_row=df.iloc[no+1].to_dict()
-            dif1=cur_row['st_flt']-prev_row['en_flt']
-            dif2=next_row['st_flt']-cur_row['en_flt']
-            min_st_flt=cur_row['st_flt']
-            b=0
-            j=no-1
-            while cond(prev_row,cur_row,next_row):
-                print('---')
-                print(df)
-                b=1
-                txt+= cur_row['txt'] + ' '         # aggregating text 
-                max_en_flt=cur_row['en_flt']           # catching end flt 
-                min_st_flt=min(cur_row['st_flt'],min_st_flt)
-                indexes_to_remove.append(no)    
+            if not cond(prev_row,cur_row):
                 no+=1
-                if no+1 ==len(df):
-                    break
-                prev_row=df.iloc[no-1].to_dict()
-                cur_row=df.iloc[no].to_dict()
-                next_row=df.iloc[no+1].to_dict()       
-
-            if b:                                                         # if concat happened
-                print(prev_row)
-                print(cur_row)
-                print(next_row)
-
-#                input('xxx')
-                last_row=df.iloc[j].to_dict()                             # this row <concat rows 
-                future_row=df.iloc[max(indexes_to_remove)+1].to_dict()    # concat rows> this row 
-                dif1=min_st_flt- last_row['en_flt']
-                dif2=future_row['st_flt'] - max_en_flt  
-                print(dif1,dif2)
-                print(last_row)
-                print(future_row)
-                print(dif1,dif2,j,no)
-                if dif1<dif2 and b : # move concat rows to last row        
-                    last_row['txt']=last_row['txt'] + ' ' + txt 
-                    last_row['en_flt']=max_en_flt
-                    df.loc[j]=last_row
-                elif dif1 >= dif2 and b: 
-                    future_row['txt'] = txt + ' ' + future_row['txt']
-                    future_row['st_flt']=min_st_flt
-                    df.loc[no]=future_row
-            
-            if no==len(df)-1:
-                print('last row?')
-                print(txt)
-                print(no)
-                print(df)
-                print(indexes_to_remove)
-                input('wait')
-            
-            
-            
-            txt='' # reset txt 
-            no+=1
-            
-        df=df.drop(indexes_to_remove)
-        df.reset_index(inplace=True)
-        df['st']=df['st_flt'].apply(self.flt_to_ts)
-        df['en']=df['en_flt'].apply(self.flt_to_ts)
-        self._calculate_pause_to_next(df=df)   
-        self.clear_df(df=df)     
-        return df 
-    
-    
-    def split_rows(self,df):
-        def has_dot_in_middle(prev_row,cur_row,next_row): # function checking if row should be splitted 
-            foo= '. ' in cur_row['txt'] #or ', ' in cur_row['txt']
-            bar=' .' in cur_row ['txt'] #or ' ,' in cur_row['txt']
-            return foo or bar
-            
-        def extract_words(string): # function splitting text 
-            chars=['. ',', ','-']
-            chars=['. ','-']
-            for char in chars:
-                if char in string: 
-                    return string.split(char)[0].strip()+char.strip(),string.split(char)[1].strip()
-        def split_fun(row): # function splitting rows 
-            row1=row.copy()
-            row2=row.copy()
-            row1['txt'],row2['txt']=extract_words(row['txt'])
-            w1 = len(row1['txt'])/ ( len(row2['txt']) + len(row1['txt']) ) 
-            
-            row1['dif']=np.round(row1['en_flt']-row2['st_flt'],2)
-            row1['en_flt']=np.round(row1['en_flt'] - row1['dif'] * w1 ,2)
-            row2['st_flt']=np.round(row1['en_flt'],2)
-            return row1,row2
-            
-            
-        df=self._split_on_condition(df=df,cond=has_dot_in_middle,split_fun=split_fun)
-        pd.options.display.max_colwidth = 100
-        print(df)
-        df.reset_index(inplace=True)
-        df['st']=df['st_flt'].apply(self.flt_to_ts)
-        df['en']=df['en_flt'].apply(self.flt_to_ts)
-        df['dif']=np.round(df['en_flt']-df['st_flt'],2)
-        
-        self._calculate_pause_to_next(df=df)  
-        self.tmp_df=df 
-        print(df)
-
+            else:
+                prev_row,cur_row,bl = func(prev_row,cur_row)
+                df.loc[prev_row['index']]=prev_row
+                df.loc[cur_row['index']]=cur_row
+                
+                if bl:
+                    df.drop(cur_row['index'],inplace=True)
+                    no-=1
+                
+                no+=1
+                
         return df
     
-    def _split_on_condition(self,df,cond,split_fun):
-        df2=pd.DataFrame(columns=df.columns)
-        indexes_to_remove=[]
-        b=True
-        no=0
-        
-        # first row 
-        first_row=df.iloc[0].to_dict()
-        if cond(first_row,first_row,first_row):
-            row1,row2=split_fun(first_row)
-            first_row['txt']=row1['txt']
-            first_row['en_flt']=row1['en_flt']
-            
-            second_row=df.iloc[1].to_dict()
-            second_row['txt']=row2['txt'] + ' ' + second_row['txt']
-            second_row['st_flt']=first_row['en_flt']
-            # update first and second row 
-            df.loc[0]=first_row
-            df.loc[1] = second_row                       
-        
-        # last row 
-        last_row=df.iloc[-1].to_dict()
-        if cond(last_row,last_row,last_row):
-            second_to_last_row=df.iloc[-2].to_dict()
-            row1,row2=split_fun(last_row)
-            second_to_last_row['txt']=second_to_last_row['txt'] + ' ' +  row1['txt']
-            second_to_last_row['en_flt']=row1['en_flt']
-            last_row['txt']=row2['txt']
-            df.iloc[-1]=last_row
-            df.iloc[-2]=second_to_last_row
-            
-            
-        while no <len(df)-2:
-            no+=1
-            prev_row=df.iloc[no-1].to_dict()
-            cur_row=df.iloc[no].to_dict()
-            next_row=df.iloc[no+1].to_dict() # not used
-            if cond(cur_row,cur_row,cur_row):
-#                input('here')
-                indexes_to_remove.append(no)
-                row1,row2=split_fun(cur_row)
-                # move stuff with dot to prior row 
-                prev_row['txt']=prev_row['txt'] + ' ' + row1['txt']
-                prev_row['en_flt']=row1['en_flt']                
-                # remove stuff moved above from cur row 
-                cur_row['txt']=row2['txt']
-                cur_row['st_flt']=prev_row['en_flt']
-                df.loc[no-1]=prev_row
-                df.loc[no]=cur_row
-                df.reset_index(inplace=True,drop=True)
-                #df=df
-                #print(indexes_to_remove)
-                #df=df.drop(indexes_to_remove)
-                df['st']=df['st_flt'].apply(self.flt_to_ts)
-                df['en']=df['en_flt'].apply(self.flt_to_ts)
-                
-        return df  
-     
     
-    # tbd     
-    # step bringing all parsing methods together  parsing steps together 
-    def parse_json3_to_df(self,fp,dump_df=True,**kwargs):
-        # step 1 
-        df=self.read_json3_to_df(fp=fp)
-        if kwargs.get('dump_all'):
+    
+    # bringing parsing methods together  
+    def parse_json3_to_df(self,fp,dump_df=True,N=0.1,**kwargs):
+        df=self.read_json3_to_df(fp=fp)                                 # read df
+        if kwargs.get('dump_all'):                                      # dump all kwarg 
             self.dump_df(df=df,name='df1_read_json3_to_df.csv')
         
-        # recalculate pause_to_next
-        self._calculate_pause_to_next(df=df)
+        # 
+        df=self.concat_overlapping_rows(df=df,N=N)
+        
         if dump_df:
             name=kwargs.get('name')
             if name is None:
                 name='df_parsed.csv'
-            self.dump_df(df=df,name=name)
+            fp=self.dump_df(df=df,name=name)
             
-        
-        return df  
+        return fp
     
     # calculates pause to next row 
     def _calculate_pause_to_next(self,df):
         a=df['en_flt']
         b=df['st_flt'].shift(-1)
         df['pause_flt']=np.round(b-a,2)
-#        df.iloc[-1]['pause_flt']=0
         df.loc[len(df)-1,'pause_flt']=0
+        df['dif']=np.round(df['en_flt']-df['st_flt'],2)
         return a-b
 
-    
+
     def sentesize(self,df):
         def func(s):
             s=s.capitalize()
@@ -408,22 +237,23 @@ class ytd(utils):
 def wf1(ytd: ytd
         ,url='https://www.youtube.com/watch?v=_ypD5iacrnI&ab_channel=MovieRecaps'
         ,download_timestamps=True,
-        download_vid=False):
-
+        download_vid=True,
+        lang='pl'):
 
     dir_name=datetime.datetime.now().strftime("%Y%m%d")     # make a dir 
     dir_fp=ytd.path_join(ytd.tmp_dir, dir_name)             # make a dir 
-    
-    #ytd.make_dir(fp=dir_fp)    # let's make a dir
+    ytd.make_dir(fp=dir_fp)
     ytd.tmp_dir= dir_fp                                     # set a dir 
-
-    if download_timestamps and download_vid:  
-        input('here')# speeds up download fren 
-        timestamps=["00:00:00","00:1:00"]
-        ytd.download_vid(yt_url=url,timestamps=timestamps)
-    
+    ytd.clear_dir(fp=ytd.tmp_dir)
+    if download_vid:
+        if download_timestamps:
+            timestamps=None # ["00:00:00","00:1:00"]
+            ytd.download_vid(yt_url=url,timestamps=timestamps)
+        else:
+            ytd.download_vid(yt_url=url)
+            
     # download whole thing 
-    ytd.download_subs(yt_url=url,lang='pl')              # download subs 
+    ytd.download_subs(yt_url=url,lang=lang)                 # download subs 
     ytd.parse_json3_to_df(fp=ytd.subs_fp,dump_all=True)     # parse subs, dump all 
     
         
@@ -433,5 +263,17 @@ def wf1(ytd: ytd
 if __name__=='__main__':
     ytd=ytd()
     url='https://www.youtube.com/watch?v=RMeacmRH0wA&t=3s&ab_channel=symmetry'
-    wf1(ytd=ytd,url=url)
+    url='https://www.youtube.com/watch?v=fhQtKxZ_jL8'
+    url='https://www.youtube.com/watch?v=F6dZxoob8CY'
+    url='https://www.youtube.com/watch?v=IXQgCASzh3Q'
+    url='https://www.youtube.com/watch?v=RMeacmRH0wA&t=3s'
+    url='https://www.youtube.com/watch?v=RMeacmRH0wA&t=3s&ab_channel=symmetry'
+    url='https://www.youtube.com/watch?v=_ypD5iacrnI'
+    url='https://www.youtube.com/watch?v=_yd8dV_7oho&ab_channel=LiftingVault'
+    url='https://www.youtube.com/watch?v=VgBpmdULzy0&ab_channel=LiftingVault'
+    url='https://www.youtube.com/watch?v=rz-hHjQPaQE&ab_channel=LiftingVault'
+    wf1(ytd=ytd
+        ,url=url
+        ,download_timestamps=False
+        ,download_vid=True)
    

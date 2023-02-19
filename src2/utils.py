@@ -68,6 +68,19 @@ class utils:
             self.log_variable(logger=self.logger, msg=' returncode from subprocess != 0 ',lvl='warning',q=q)
         return q.returncode
     
+    
+    def extract_sound_from_vid(self,vid_fp,timestamps=None,out_fp=None):
+        self.ffmpeg_path="C:\\ffmpeg\\bin\\"
+        ffmpeg=[f"{self.ffmpeg_path}ffmpeg"] # ffmpeg executable  
+
+        l=['-i',f'{vid_fp}','-ss',f'{timestamps[0]}','-t',f'{timestamps[1]}','-q:a','0','-map','a',f'{out_fp}']
+        l=ffmpeg + l 
+        
+        self.subprocess_run(l=l)
+        
+        
+    
+    
     # parses yt url into stuff depending on what it contains 
     def parse_url(self,url : str ) -> dict:
         id_reg=r'v=([^&]+)'
@@ -149,6 +162,7 @@ class utils:
         files=os.listdir(fp)
         for file in files:
             fpp=self.path_join(fp,file)
+           
             os.remove(fpp)
     
     
@@ -171,10 +185,12 @@ class utils:
         if fp is None:
             fp=self.path_join(self.tmp_dir,name)
         df.to_csv(path_or_buf=fp,sep='|',quoting=1,mode='w')
+        return fp
     
     # makes a directory 
     def make_dir(self,fp):
         if os.path.exists(fp):
+            return fp 
             files=os.listdir(fp)
             for file in files:
                     fpp=self.path_join(fp,file)
@@ -183,16 +199,94 @@ class utils:
         if not os.path.exists(fp):
             os.makedirs(fp)
         return fp 
+    
+    
+    def concat_on_condition2(self,df,cond = None ):
+        df2=pd.DataFrame(columns=df.columns)
+        ok_indexes=[0]                  # first row cant be moved up 
+        bad_indexes=[]
+        df2.loc[0]=df.loc[0].to_dict()  # rewrite first row 
+        no=1                            # first row rewritten 
+        
+        while no<len(df):
+            prev_row=df.iloc[no-1].to_dict()
+            cur_row=df.iloc[no].to_dict()
             
+            if not cond(prev_row,cur_row): # if not condition rewrite row 
+                df2.loc[len(df2)]=cur_row
+                ok_indexes.append(no)
+                no+=1
+            else:
+                df2.loc[len(df2)]=cur_row   # rewrite the row but also delete it later 
+                bad_indexes.append(no)
+                last_row=df2.iloc[max(ok_indexes)].to_dict() # last ok row 
+                last_row['txt'] = last_row['txt'] + ' ' + cur_row['txt']
+                last_row['en_flt'] = cur_row['en_flt']
+                df2.iloc[max(ok_indexes)]=last_row
+                no+=1
+                
+        
+        df2.drop(bad_indexes,inplace=True)
+        print(df2)
+            
+    def concat_on_condition3(self,df,cond = None,func=None ):
+        print(df)
+        df2=pd.DataFrame(columns=df.columns)
+        ok_indexes=[0]                  # first row cant be moved up 
+        bad_indexes=[]
+        df2.loc[0]=df.loc[0].to_dict()  # rewrite first row 
+        no=1                            # first row rewritten 
+        
+        while no<len(df):
+            prev_row=df.iloc[no-1].to_dict()
+            cur_row=df.iloc[no].to_dict()
+            
+            if not cond(prev_row,cur_row): # if not condition rewrite row 
+                df2.loc[len(df2)]=cur_row
+                ok_indexes.append(no)
+                no+=1
+            else:
+                prev_row,cur_row,del_bool=func(prev_row,cur_row)  # modify rows 
+                if del_bool:
+                    bad_indexes.append(no)
+                
+                df2.loc[len(df2)]=cur_row           # rewrite the row but also delete it later if necessary 
+                df2.iloc[max(ok_indexes)]=prev_row  # rewrite previous ok row 
+                no+=1
+                
+        
+        df2.drop(bad_indexes,inplace=True)
+        print(df2)
           
             
-#        print(tmp_df)
-#            print(next_subs_d)
-#            
-#            if subs_d['en']==next_subs_d['en']:
-#                self.subs_d['txt']+=' '+next_subs_d['txt']      # concatenating 
-#                
-#            elif self.subs_d['txt']!='\n':
-#                self.df_insert_d(df=tmp_df,d=self.subs_d)
-#            
-                
+
+import ytd 
+
+def func(prev_row,cur_row):
+    txt1=prev_row['txt']
+    txt2=cur_row['txt']
+    txt1=txt1 +' '+ txt2.split('. ')[0]+'.'
+    txt2=' '.join(txt2.split('. ')[1:])
+    prev_row['txt']=txt1
+    cur_row['txt']=txt2
+    return prev_row,cur_row,False
+    
+def func(prev_row,cur_row):
+    prev_row['txt']=prev_row['txt'] + ' '+cur_row['txt']
+    prev_row['en_flt']=cur_row['en_flt']
+    return prev_row,cur_row,True
+    
+    
+def concat_on_cond2():
+    i=ytd.ytd()
+    f='concat_on_cond3.csv'
+    input_csv=i.path_join('tests','tests_inputs',f)    
+    input_df = i.read_csv(fp=input_csv)
+    
+    cond=lambda prev_row,cur_row : cur_row['txt'] in ['third','fourth']
+    cond = lambda prev_row,cur_row : '. ' in cur_row['txt']
+    
+    i.concat_on_condition3(df=input_df,cond=cond,func=func)
+    
+if __name__=='__main__':
+    concat_on_cond2()
