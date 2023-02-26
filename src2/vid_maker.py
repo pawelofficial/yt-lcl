@@ -1,11 +1,19 @@
 from utils import utils 
 import datetime
 import pydub 
+import numpy as np 
 import time 
+from moviepy.editor import *
+import torch 
+import torchvideo 
+import torchvision
+import random
+import torchaudio
+import os 
 class vid_maker(utils):
     def __init__(self,today = None ) -> None:
         super().__init__()
-        self.logger=self.setup_logger(name='ytd_logger',log_file='ytd.log')
+        self.logger=self.setup_logger(name='vm_logger',log_file='vm.log')
         self.ffmpeg_path="C:\\ffmpeg\\bin\\"
         self.lambda_make_fp = lambda dir,name: self.path_join(dir,name)
         self.root_dir=self.path_join('tmp')
@@ -14,63 +22,176 @@ class vid_maker(utils):
         if today is None:
             today=datetime.datetime.now().strftime("%Y%m%d")
          
-        self.tmp_dir=self.path_join('tmp',today)  # path to tmp dir
+        self.tmp_dir=self.path_join('tmp',today)        # path to tmp dir
         self.vids_dir=self.path_join(self.tmp_dir,'vids')
         self.background_fp=''                           # fp to background vid
         self.speech_fp=''                               # fp to speech wav 
-        self.video_fp=''                                # fp to video 
+        self.vid_fp=''                                # fp to video 
         
     # returns len of video in seconds 
     def get_vid_len(self,vid_fp):
-        return len(pydub.AudioSegment.from_file(vid_fp))/1000
+        try:
+            audio_len=len(pydub.AudioSegment.from_file(vid_fp))/1000
+            return audio_len
+        except Exception as err:
+            clip = VideoFileClip(vid_fp)           
+            return clip.duration
+
+    # boomerangizes last n seconds of a video 
+    def torch_boomerang(self,vid_fp,out_fp,n=3):
+        if n==0:
+            n=self.get_vid_len(vid_fp=vid_fp)
         
-    # tries to return fp if name of file was pr
-    def extract_sound_from_vid(self,vid_fp,
-                               timestamps=None,
-                               out_fp=None):
+        vid,audio,info=torchvision.io.read_video(vid_fp)
+        start_boomerang_frame= int( len(vid) - n*info['video_fps'] ) 
+        if start_boomerang_frame < 0 :
+            start_boomerang_frame =0 
+        end_boomerang_frame=int( len(vid) ) 
+        
+        boomerang_tensor=vid[start_boomerang_frame:end_boomerang_frame].clone()
+        flip=boomerang_tensor.flip(dims=[0]).clone()
+        flip=self.torch_add_effect(t=flip,reverse=False)
+        
+        boomerang_tensor=self.torch_add_effect(t=boomerang_tensor,reverse=True)
+        t=torch.cat(tensors=(vid,flip,boomerang_tensor),dim=0)
+        
+        torchvision.io.write_video(filename=out_fp
+                                   ,video_array=t
+                                   ,fps=info['video_fps']
+                                   ,video_codec='libvpx')
+        return out_fp
+
+    def torch_add_effect(self,t,reverse=False):
+        lambda_weight = lambda i,t : i/t.size(0)                # linear scaling of the effect asc  (smooth)
+        lambda_weight2=lambda i,t: 1-lambda_weight(i,t)      # linear scaling of the effect desc (abrupt)
+        f=lambda_weight
+        if reverse:
+            f=lambda_weight2
+        for i in range(t.size(0)):
+            weight=f(i,t)
+            
+            t[i,:,:,2]+=int(25*weight) # blue color 
+            #r=random.randint(0,100)/100
+            #N=10
+            #t[i,:,:,0]+=int(N*r)
+            #t[i,:,:,1]+=int(N*r)
+            #t[i,:,:,2]+=int(N*r)
+        return t 
+        
+    def torch_cut_vid(self,vid_fp,out_fp,st_flt = 0 ,en_flt = 10, dur_flt = None ):
+        if dur_flt is not None:
+            en_flt=st_flt+dur_flt
+            
+        if en_flt==0:
+            en_flt=self.get_vid_len(vid_fp=vid_fp)
+ 
+        vid,audio,info=torchvision.io.read_video(vid_fp)    # get tensors from video filepath 
+        vstart_frame = int(st_flt * info['video_fps'])      # video start frame 
+        vend_frame = int(en_flt * info['video_fps'])        # video end frame 
+
+        vclip = vid[vstart_frame:vend_frame]                # video clip tensor 
+
+        torchvision.io.write_video(filename=out_fp
+                                   ,video_array=vclip
+                                   ,fps=info['video_fps']
+                                   ,video_codec='libvpx'
+                                   #,audio_array=aclip              # looks like bug in torch  https://stackoverflow.com/questions/75070838/torch-write-video-throws-indexerror
+                                   #,audio_fps=info['audio_fps']
+                                   #,audio_codec='aac'
+                                   )
+        return out_fp
+        
+    def torch_cut_audio(self,audio_fp,out_fp,st_flt = 0 ,en_flt = 10, dur_flt = None ):
+        if dur_flt is not None:
+            en_flt=st_flt+dur_flt
+#        vid,audio,info=torchaudio.io.read_audio(audio_fp)    # get tensors from video filepath 
+        waveform, rate_of_sample = torchaudio.load(audio_fp)
+
+        start_sample = int(st_flt *rate_of_sample)      # audio start frame 
+        end_sample = int(en_flt * rate_of_sample)        # audio end frame 
+        trimmed_waveform = waveform[:, start_sample:end_sample]
+        torchaudio.save(out_fp, trimmed_waveform, rate_of_sample)
+        return out_fp
+
+    # split sound and video to separate files from a video 
+    def split_sound_and_video(self,vid_fp,out_dir,do_audio=True,do_video=False,timestamps=None,out_fp=None):
+        out_audio_fp=None
+        out_video_fp=None
+        if out_fp is None:
+            fname=os.path.basename(vid_fp) # fname of vid_fp
+            base=os.path.dirname(vid_fp)
+            audio_fname,_=self.strip_extension(fname,new_ext='.wav')
+            vid_fname,_=self.strip_extension(fname,new_ext='.webm')
+            out_audio_fp=self.path_join(out_dir,audio_fname)
+            out_vid_fp=self.path_join(out_dir,vid_fname)
+        if do_audio:
+            out_fpp=out_fp or out_audio_fp # use out_fp or audio_fp if out_fp is nont 
+            out_audio_fp=self.extract_sound_from_vid(vid_fp=vid_fp,timestamps=timestamps,out_fp=out_fpp)
+            
+        if do_video:
+            out_fpp=out_fp or out_vid_fp
+            out_video_fp=self.extract_vid_from_vid(vid_fp=vid_fp,timestamps=timestamps,out_fp=out_fpp)
+                   
+        return out_video_fp,out_audio_fp
+    
+    def extract_sound_from_vid(self,vid_fp,timestamps=None,out_fp=None):
         ffmpeg=[f"{self.ffmpeg_path}ffmpeg",'-y'] # ffmpeg executable  
-        l=['-i',f'{vid_fp}','-ss',f'{timestamps[0]}','-t',f'{timestamps[1]}','-q:a','0','-map','a',f'{out_fp}']
+        if timestamps is None:  
+            l=['-i',f'{vid_fp}','-q:a','0','-map','a',f'{out_fp}']
+        else:
+            l=['-i',f'{vid_fp}','-ss',f'{timestamps[0]}','-t',f'{timestamps[1]}','-q:a','0','-map','a',f'{out_fp}']
         l=ffmpeg + l     
         self.subprocess_run(l=l)
         return out_fp
 
+    def extract_vid_from_vid(self,vid_fp,
+                               timestamps=None,
+                               out_fp=None):
+        
+        out_fp=self.torch_cut_vid(vid_fp=vid_fp,st_flt=0,en_flt=0,out_fp=out_fp)    # pytorch is faster than ffmpeg
+        return out_fp
+        
+        ffmpeg=[f"{self.ffmpeg_path}ffmpeg",'-y'] # ffmpeg executable  
+        if timestamps is None:
+            l=['-i',f'{vid_fp}','-q:v','0','-map','v',f'{out_fp}']    
+        else:
+            l=['-i',f'{vid_fp}','-ss',f'{timestamps[0]}','-t',f'{timestamps[1]}','-q:v','0','-map','v',f'{out_fp}']
+        l=ffmpeg + l     
+        self.subprocess_run(l=l)
+        return out_fp
 
     # adds background to speech  - essentialy overlays two audios 
-    def add_background(self,background_fp,speech_fp,out_fp,background_volume=0.2):
+    def overlay_audios(self,background_fp,speech_fp,out_fp,background_volume=0.2):
         ffmpeg=[f"{self.ffmpeg_path}ffmpeg",'-y'] # ffmpeg executable  
+        audio_len=self.get_vid_len(background_fp)
+        vid_len=self.get_vid_len(speech_fp)
+        if audio_len<=vid_len: # maybe i should make background audio longer here 
+            print('background audio is shorter than video')
+
         l =ffmpeg + ['-i',f'{background_fp}'
                      ,'-i',f'{speech_fp}'
                      ,'-filter_complex'
-                     ,f'[0:0]volume={background_volume}[a];[1:0]volume=1[b];[a][b]amix=inputs=2:duration=longest', 
-                     
+                     ,f'[0:0]volume={background_volume}[a];[1:0]volume=1[b];[a][b]amix=inputs=2:duration=1', 
                      f'{out_fp}' ]
         self.subprocess_run(l)
         return out_fp
         
-        
-    # overlay audio and video 
-    def overlay_audio_and_video(self,video_fp,audio_fp,out_fp,offset=0):
+    # overlays audio and video 
+    def overlay_audio_and_video(self,vid_fp,audio_fp,out_fp,vid_offset=0,audio_offset=0):
+        vid_len=self.get_vid_len(vid_fp=vid_fp)                     # get vid len 
+        tmp_audio_fp=self.path_join(audio_fp,'tmp.wav',swap=True)   # make tmp audio of same len as vid 
+        tmp_audio_fp=self.torch_cut_audio(audio_fp=audio_fp,out_fp=tmp_audio_fp,st_flt=0,dur_flt=vid_len)
         ffmpeg=[f"{self.ffmpeg_path}ffmpeg",'-y'] # ffmpeg executable  
-        l=['-i',video_fp,
-           '-itsoffset',f'{offset}',
-           '-i',audio_fp,
-           '-c:v','copy','-map','0:v','-map','1:a',f'{out_fp}']
+        l=['-itsoffset',f'{vid_offset}'
+           ,'-i',vid_fp
+            ,'-itsoffset',f'{audio_offset}'
+           ,'-i',audio_fp
+           ,'-c:v','copy','-map','0:v','-map','1:a',f'{out_fp}']
         l=ffmpeg + l 
         self.subprocess_run(l)
         return out_fp
         
-        
-    # makes a vid out of timestamps 
-    
-    def cut_vid_to_timestamps(self,vid_fp,out_fp,timestamps):
-        ffmpeg=[f"{self.ffmpeg_path}ffmpeg",'-y'] # ffmpeg executable  
-        l=['-i',f'{vid_fp}','-ss',f'{timestamps[0]}','-t',f'{timestamps[1]}','-c:v','copy','-c:a','copy' ,f'{out_fp}' ]
-        l=ffmpeg+l
-        self.subprocess_run(l)
-        return out_fp
-        
-        
-    # combines audios together     
+    # combines streams together     
     def concat_streams(self,fps : list,out_fp):
         ffmpeg=[f"{self.ffmpeg_path}ffmpeg"] # ffmpeg executable  
         mylist_fp=self.path_join(self.root_dir,'mylist.txt')
@@ -78,135 +199,42 @@ class vid_maker(utils):
             for fp in fps:
                 s=f"file \'{fp}\'" +'\n'
                 f.write(s)
-        
         l =ffmpeg + ['-f','concat','-safe','0','-i',f'{mylist_fp}','-y','-c','copy',f'{out_fp}' ]
         self.subprocess_run(l)
+        return out_fp
+        
+    # returns video length in seconds 
+    def get_ffmpeg(self,vid_fp,key='bitrate'):
+        pass # ffmpeg -i input.mp4 -f null 
+        ffmpeg=[f"{self.ffmpeg_path}ffprobe"] # ffmpeg executable  
+        l=['-i',f'{vid_fp}'
+           ,'-show_format' ]
+        l=ffmpeg+l
+        out=self.subprocess_run(l)
+        for line in out.splitlines():
+            if key in line:
+                d=line.split('=')
+                return np.float(d[1])
+        return None 
+        
+# cuts video to pieces of N length     
+    def chopify_video(self,vid_fp,out_dir,N=2,title='',ext='webm'):
+        vid_len=self.get_vid_len(vid_fp=vid_fp)  # get vid len 
+        cnt = int( vid_len // N  )               # get cnt of files   
+        tses=[]
+        floats=[]
+        for i in range(cnt):                     # for each file 
+            st_ts=self.flt_to_ts(i*N)            # calculate tses 
+            en_ts=self.flt_to_ts((i+1)*N)
+            ts=[st_ts,en_ts]                     # save them 
+            tses.append(ts)
+            floats.append([i*N,(i+1)*N])
+        tses.append([en_ts, self.flt_to_ts(vid_len) ]) # add more tses 
+        floats.append( [floats[-1][1],vid_len] )
+        for no,ts in enumerate(floats):                   # chop stuff 
+            out_fp=self.path_join(out_dir,f'{title}_part_{no}.{ext}')
+
+            self.torch_cut_vid(vid_fp=vid_fp,st_flt=ts[0],en_flt=ts[1],out_fp=out_fp)
+            #self.cut_vid_to_timestamps(vid_fp=vid_fp,out_fp=out_fp,timestamps=ts)
         return 
         
-        
-    def add_watermark(self,vid_fp,watermark_fp,out_fp):
-        ffmpeg=[f"{self.ffmpeg_path}ffmpeg",'-y'] # ffmpeg executable
-        
-        l=['-i',f'{vid_fp}','-i' ,f'{watermark_fp}',
-           '-filter_complex',
-#           'overlay=x=(main_w-overlay_w)/2:y=(main_h-overlay_h)/100',
-           'overlay=10:10',
-           f'{out_fp}']
-        l=ffmpeg+l  
-        self.subprocess_run(l)
-        return watermark_fp
-        
-        
-    def add_offset(self,vid_fp,duration=5,prepend=True):
-        from moviepy.audio.io.AudioFileClip import AudioClip
-        from moviepy.editor import  AudioFileClip,concatenate_audioclips
-        silent_clip = AudioClip(lambda t: 0, duration=duration)
-        vid = AudioFileClip(vid_fp)
-        if prepend:
-            output = concatenate_audioclips([silent_clip,vid])
-        else:
-            output = concatenate_audioclips([vid,silent_clip])
-            
-        vid_fp,_=self.strip_extension(s=vid_fp)
-        vid_fp=vid_fp+'_pause2_.wav'
-        output.write_audiofile(vid_fp)
-        return vid_fp
-        
-# takes a vid, plays it, plays it back and plays it forward
-# makes vid 3 times longer if N = 1 
-    def boomerangize(self,vid_fp,out_fp,N=1):
-        self.ffmpeg_path="C:\\ffmpeg\\bin\\"
-        ffmpeg=[f"{self.ffmpeg_path}ffmpeg",'-y'] # ffmpeg executable  
-        
-        l=['-i',f'{vid_fp}'
-           ,'-filter_complex'
-            ,f'[0]reverse[r];[0][r][0]concat=n=3,setpts={N}*PTS'
-           ,f'{out_fp}']
-        l=ffmpeg + l 
-        self.subprocess_run(l=l)
-        
-        
-def silerka_wf(dir_name
-               ,background_music_fname
-               ,speech_fname
-               ,video_fname
-               ,final_name):
-
-    vm=vid_maker(dir_name)
-    
-    
-    watermark_fp=vm.lambda_make_fp(vm.root_dir,'silerka2.png')
-
-    
-
-#    background_music_fname='CHILLSTEP_SAPPHEIROS__DAWN.webm'
-#    speech_fname='0_4cac653d02dbfd1a26bbfacdc93962469baf28337a572f28aee5828646694338.wav'
-#    video_fname='HE_TOOK_IT_TOO_DEEP.webm'
-    
-    vm.background_fp=vm.path_join(vm.root_dir,background_music_fname)
-    vm.speech_fp=vm.path_join(vm.vids_dir,speech_fname)
-    vm.video_fp=vm.path_join(vm.tmp_dir,video_fname)
-    
-    
-    
-    # 0 prepeend speech with pause
-    pause_fp=vm.add_offset(vid_fp=vm.speech_fp)
-    vm.speech_fp=pause_fp
-
-    
-    #0. cut video to timestamps 
-    action_fp=vm.lambda_make_fp(vm.tmp_dir,'boomerang.webm')
-    timestamps=['00:00:05.000','00:00:35.000']
-    vm.cut_vid_to_timestamps(vid_fp=vm.video_fp,out_fp=action_fp,timestamps=timestamps)
-
-
-
-#    input('wait 1 ')
-
-    time.sleep(1)
-    #1. concat actions so it's longer than speech 
-    fps=[action_fp for i in range(5)]
-    boomerganged_fp=vm.lambda_make_fp(vm.tmp_dir,'boomerang_out.webm')
-    vm.concat_streams(fps=fps,out_fp=boomerganged_fp)
-    
-    time.sleep(1)
-#    input('wait 2 ')
-    #2. get speech file len
-    speech_len=vm.get_vid_len(vm.speech_fp)
-    en=vm.flt_to_ts(speech_len)
-    #input('wait 3 ')
-    
-    #2. make background music 
-    cut_background_fp=vm.lambda_make_fp(vm.tmp_dir,'cut_background.wav')
-    vm.background_fp=vm.extract_sound_from_vid(vid_fp=vm.background_fp,timestamps=['00:00:00',vm.flt_to_ts(speech_len)],out_fp=cut_background_fp)
-    #input('wait 4 ')
-    time.sleep(1)
-    #3. combine speech with background 
-    audio_fps=[vm.background_fp,vm.speech_fp]
-    combined_audios_fp=vm.lambda_make_fp(vm.tmp_dir,'combined_audios_offset.wav')
-    combined_audios_fp=vm.add_background(background_fp=audio_fps[0],speech_fp=audio_fps[1], out_fp=combined_audios_fp)
-    #input('wait 5')
-    time.sleep(1)
-    
-    #4. combine audio and video 
-    out_fp=vm.lambda_make_fp(vm.tmp_dir,'final.webm')
-    vm.overlay_audio_and_video(video_fp=boomerganged_fp,audio_fp=combined_audios_fp,out_fp=out_fp,offset=5)
-    #input('wait 6')
-    time.sleep(1)
-    
-    #5. cut final video to good timestamps 
-    out_fp2=vm.lambda_make_fp(vm.tmp_dir,f'{final_name}.webm')
-    timestamps=['00:00:00.000',en]
-    vm.cut_vid_to_timestamps(vid_fp=out_fp,out_fp=out_fp2,timestamps=timestamps)
-    
-
-#    print('add watermark')
-#    #6. add watermark 
-#    out_fp3=vm.lambda_make_fp(vm.tmp_dir,'final_watermark.webm')
-#    watermark_fp=vm.path_join(vm.root_dir,'silerka.png')
-#    vm.add_watermark(vid_fp=out_fp2,watermark_fp=watermark_fp,out_fp=out_fp3)
-    
-    
-    exit(1)
-    
-    print(combined_audios_fp)

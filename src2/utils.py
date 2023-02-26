@@ -14,16 +14,29 @@ class utils:
         print('this is utils')
     
     # returns absolute path for directories behind *args, for exmplae path_join('tmp','vids') will point to ./tmp/vids/
-    def path_join(self,*args,ext='',meta=False):     
-        current_dir = os.path.dirname(os.path.abspath(__file__))
+    def path_join(self,*args,ext='',meta=False,swap=False):     
         path_join = lambda l : os.path.join(current_dir,*l).replace('\\','\\\\')+ext
+        if swap:        # swaps a  file in provided fp  
+            fp=args[0]
+            swap=args[1]
+            isfile=os.path.isfile(fp)
+            if not isfile:                          # if file does not exist 
+                print(f'{fp} file does not exist')
+                return None 
+            base=os.path.dirname(fp)+'\\\\'
+            return os.path.join(base,swap)
+            
+                   
+        current_dir = os.path.dirname(os.path.abspath(__file__))
         path=path_join(args)
         isfile=os.path.isfile(path)
         isdir=os.path.isdir(path)
         exist=os.path.exists(path)
         if meta:    # if meta returns metadata about filepath 
-            return path, (isfile,isdir,exist)
-        return path.replace('\\\\\\','\\\\')
+            return path.replace('\\\\\\','\\\\'), {'isfile':isfile,'isdir':isdir,'exists':exist}
+        path=path.replace('\\\\\\','\\\\')
+
+        return path
     
     # sets up logger object for logging 
     def setup_logger(self,name, log_file, level=logging.INFO,mode='w'):
@@ -257,8 +270,8 @@ class utils:
         
         df2.drop(bad_indexes,inplace=True)
         print(df2)
-          
-            
+
+
 
 import ytd 
 
