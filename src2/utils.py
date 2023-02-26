@@ -5,8 +5,10 @@ import datetime
 import re 
 import pandas as pd 
 import json 
+from fuzzywuzzy import fuzz
 import numpy as np 
 # class for utilities things 
+
 class utils:
     def __init__(self) -> None:
         pass
@@ -271,8 +273,53 @@ class utils:
         df2.drop(bad_indexes,inplace=True)
         print(df2)
 
+    # requires better testing bro 
+    # cuts off part of a string that's behind provided fuzzy_string
+    def fuzzy_cutoff(self,s,fuzzy_string='dzieki za ogladanie',include_fuzzy_string=False,append_txt=''):
+        new_s=[]
+        l=s.split(' ')
+        N=len(fuzzy_string.split(' '))
+        bl=0
+        for i in range(0,len(l)-N):
+            w=l[i:i+N]
+            sentence=' '.join(w)
+            ratio = fuzz.token_sort_ratio(sentence, fuzzy_string)
+            print(sentence)
+            if ratio>80:
+                bl=1
+                break
+            w=[i.strip() for i in sentence.split(' ')]
+            new_s.append(w[0])
+        if include_fuzzy_string:
+            new_s.append(fuzzy_string)
+            
+        if bl: # append only if match happened 
+            new_s.append(append_txt)
+        return ' '.join(new_s)  
 
+    # requires better testing bro 
+    # returns part of a string that's behind a fuzzy string 
+    def fuzzy_startoff(self,s,fuzzy_string='liftvault',include_fuzzy_string=False,prepend_txt=''):
+        new_s=[prepend_txt]
+        l=s.split(' ')
+        N=len(fuzzy_string.split(' '))
+        bl=0
+        for i in range(0,len(l)):
+            w=l[i:i+N]
+            sentence=' '.join(w)
+            ratio = fuzz.token_sort_ratio(sentence, fuzzy_string)
+            if ratio>80:
+                bl=1
+                if not include_fuzzy_string:
+                    continue
+            w=[i.strip() for i in sentence.split(' ')]
+            if bl:
+                new_s.append(w[0])
+                
 
+        return ' '.join(new_s)  
+
+#---------------------------------------
 import ytd 
 
 def func(prev_row,cur_row):
@@ -300,6 +347,10 @@ def concat_on_cond2():
     cond = lambda prev_row,cur_row : '. ' in cur_row['txt']
     
     i.concat_on_condition3(df=input_df,cond=cond,func=func)
+    
+    
+
+    
     
 if __name__=='__main__':
     concat_on_cond2()

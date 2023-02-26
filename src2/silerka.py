@@ -1,17 +1,17 @@
 import ytd 
 import datetime
 import azure_tts
-from vid_maker import silerka_wf
+import vid_maker as vm 
 
-def wf1(ytd: ytd
+def ytd_wf1(ytd: ytd
         ,url='https://www.youtube.com/watch?v=_ypD5iacrnI&ab_channel=MovieRecaps'
         ,download_timestamps=True
         ,download_vid=True
         ,lang='pl'
-        ,pause_flt=0.1
         ,clear_tmp = True ):
 
-    dir_name=datetime.datetime.now().strftime("%Y%m%d%H%M")     # make a dir 
+    dir_name=datetime.datetime.now().strftime("%Y%m%d%H%M")     # make a dir with minutes 
+#    dir_name=datetime.datetime.now().strftime("%Y%m%d%H")     # make a dir  till hours 
     dir_fp=ytd.path_join(ytd.tmp_dir, dir_name)             # make a dir 
     ytd.make_dir(fp=dir_fp)
     ytd.tmp_dir= dir_fp                                     # set a dir 
@@ -26,50 +26,88 @@ def wf1(ytd: ytd
             
     # download whole thing 
     ytd.download_subs(yt_url=url,lang=lang)                 # download subs 
-    df_fp=ytd.parse_json3_to_df(fp=ytd.subs_fp,dump_all=True,N=pause_flt)     # parse subs, dump all 
-    return df_fp,dir_name
+    df_fp=ytd.parse_json3_to_df(fp=ytd.subs_fp,dump_all=True,N=60)     # parse subs, dump all
+    return df_fp,ytd.tmp_dir,ytd.vid_fp
 
+def tts_wf1(ytd):
+    a=azure_tts.azure_tts()
+    #a.talk()
+    a.set_lang='pl'                                             # set language 
+    a.tmp_dir=ytd.tmp_dir                                       # rewrite tmp dir 
+    a.vids_dir=a.make_dir(fp=a.path_join(a.tmp_dir,'vids'))     # make vids dir 
+    a.clear_dir(fp=a.vids_dir)                              # clear if you're running it again
+    df_fp=a.path_join(a.tmp_dir,'df_parsed.csv')            # get df fp 
+    a.read_df(df_fp=df_fp)                                  # read it 
+    df=ytd.subs_df
+    txt=' '.join(df['txt'].to_list()).strip()
+    print(txt)
+    txt=ytd.fuzzy_cutoff(s=txt,fuzzy_string='dzieki za ogladanie',append_txt='Dzieki za ogladanie kanalu siłerka, koniecznie go zasubskrybuj i do zobaczenia!')
+    print(txt)
+    txt=ytd.fuzzy_startoff(s=txt,fuzzy_string='liftvault',prepend_txt='Siemanko, witaj na kanale siłerka!')
+    
+    print(txt)
+    input('wait1')
+    audio_fp,len=a.make_a_vid(txt=txt,rate=1)   
+    return audio_fp,len
 
-
+def vidmaker_wf(vid_fp,speech_fp,background_fp,working_dir_fp,do_all=True):
+    i=vm.vid_maker()
+    # 1. split raw yt video audio and video  
+    print('splitting raw vid ')
+    if 0 or do_all:
+        yt_vid_fp,yt_vid_audio_fp=i.split_sound_and_video(vid_fp=vid_fp
+                                                                ,out_dir=working_dir_fp
+                                                                ,do_audio=True
+                                                                ,do_video=True)
+    else:
+        yt_vid_fp=i.path_join(working_dir_fp,'_vid_only.webm')
+        yt_vid_audio_fp=i.path_join(working_dir_fp,'_audio_only.mp3')
+        
+    # 2 cur vid to some timestamps 
+    print('cutting video ')
+    if 0 or do_all:
+        dur_flt=15
+        cut_vid_fp=i.path_join(working_dir_fp,'cut_vid.webm')
+        cut_vid_fp=i.torch_cut_vid(vid_fp=yt_vid_fp,out_fp=cut_vid_fp,st_flt=5,en_flt=-15)
+        dur_flt=i.get_vid_len(cut_vid_fp)
+    else:
+        cut_vid_fp=i.path_join(working_dir_fp,'cut_vid.webm')
+        
+    print(' concating video ')
+    # 3. concat vid so they're longer than speech fp 
+    if 0 or do_all:
+        speech_fp_len=i.get_vid_len(speech_fp)
+        N=int(speech_fp_len // (dur_flt) + 1) 
+        concat_cut_vid_fp=i.path_join(working_dir_fp,'concat_cut_vid.webm')
+        concat_cut_vid_fp=i.concat_streams(fps=[cut_vid_fp for i in range(N)],out_fp=concat_cut_vid_fp)
+    else:
+        concat_cut_vid_fp=i.path_join(working_dir_fp,'concat_cut_vid.webm')
     
-
-def fix_silerka_txt(s):
-    
-    welcome='Siemanko, witaj na kanale siłerka, miło Cię widzieć!'
-    s=s.replace('Dziś zagraniczny,',welcome)
-    
-    welcome='Siemanko, witaj na kanale siłerka, miło Cię widzieć!'
-    s=s.replace('Zagraniczny,',welcome)
-    welcome='Siemanko, witaj na kanale siłerka, miło Cię widzieć!'
-    s=s.replace('Zagraniczny',welcome)
-    
-    welcome='Siemanko, witaj na kanale siłerka, miło Cię widzieć!'
-    s=s.replace('zagraniczny,',welcome)
-    welcome='Siemanko, witaj na kanale siłerka, miło Cię widzieć!'
-    s=s.replace('zagraniczny',welcome)
-    
-    welcome='Siemanko, witaj na kanale siłerka, miło Cię widzieć!'
-    s=s.replace('zagraniczni',welcome)
-    
-    welcome='Siemanko, witaj na kanale siłerka, miło Cię widzieć!'
-    s=s.replace('Zagraniczni',welcome)
-    
-
-    s=s.replace('w podnoszeniu vault','')
-    s=s.replace('vault','')
-#    foo='na tyle w dzisiejszym filmie'
-#    bar='To by było na tyle w dzisiejszym filmie'
-#    s=s.replace(foo,bar)
-    print(s)
-    ss='dzięki za oglądanie'
-    L=''.join(s.split(ss)[0])
-    L=L.replace('  ',' ').strip()
-    outro='. To wszystko w dzisiejszym filmie, dzięki za oglądanie, koniecznie zasubskrybuj kanał siłerka!'
-    L=L+outro
-    return L
-
+    #4. concat speech and background 
+    print('concat speech and background')
+    if 0 or do_all:
+        speech_and_background_fp=i.path_join(working_dir_fp,'speech_and_background.wav')
+        speech_and_background_fp=i.overlay_audios(speech_fp=speech_fp,background_fp=background_fp,out_fp=speech_and_background_fp)
+    else:
+        speech_and_background_fp=i.path_join(working_dir_fp,'speech_and_background.wav')
+        
+    # 5. cut vid so it's length is exactly the same as speech 
+    print('cut video exactly to speech ')
+    if 0 or do_all:
+        exact_vid_fp=i.path_join(working_dir_fp,'exact_vid.webm')
+        exact_vid_fp=i.torch_cut_vid(vid_fp=concat_cut_vid_fp,out_fp=exact_vid_fp,st_flt=0,dur_flt=i.get_vid_len(speech_fp))
+    else:
+        exact_vid_fp=i.path_join(working_dir_fp,'exact_vid.webm')
+        
+    #6. concat vid and audio 
+    print('concat video and speech ')
+    mov_fp=i.path_join(working_dir_fp,'mov.webm')
+    mov_fp=i.overlay_audio_and_video(vid_fp=exact_vid_fp,audio_fp=speech_and_background_fp,out_fp=mov_fp)
+        
+        
 if __name__=='__main__':
     ytd=ytd.ytd()
+    background_fp=ytd.path_join('tmp','background_music_6m.wav')
     url='https://www.youtube.com/watch?v=_yd8dV_7oho&ab_channel=LiftingVault'
     url='https://www.youtube.com/watch?v=rz-hHjQPaQE&ab_channel=LiftingVault'
     url='https://www.youtube.com/watch?v=xhSSmrdQAUQ&ab_channel=LiftingVault'
@@ -77,53 +115,34 @@ if __name__=='__main__':
     url='https://www.youtube.com/watch?v=N3xLz1BwUNo&ab_channel=LiftingVault'
     url='https://www.youtube.com/watch?v=u-GXZ5u3vaU&ab_channel=LiftingVault'
     url='https://www.youtube.com/watch?v=u-GXZ5u3vaU&ab_channel=LiftingVault'
+    url='https://www.youtube.com/watch?v=DSfyvj7t6sA&ab_channel=LiftingVault'
+    url='https://www.youtube.com/watch?v=BVbKjqg2HSw&ab_channel=LiftingVault'
+    url='https://www.youtube.com/watch?v=gT8Z2QMr8eY&ab_channel=LiftingVault'
+    url='https://www.youtube.com/watch?v=r5EKkQbx18c&ab_channel=LiftingVault'
+    url='https://www.youtube.com/watch?v=BVbKjqg2HSw&ab_channel=LiftingVault'
     
-    df_fp,dir_name=wf1(ytd=ytd
+    # download vid and subs from lidting vault   + parse subs 
+    df_fp,dir_name,vid_fp=ytd_wf1(ytd=ytd
         ,url=url
         ,download_timestamps=False
-        ,download_vid=True
-        ,clear_tmp=False
-        ,pause_flt=0.5
+        ,download_vid=1
+        ,clear_tmp=0
         ,lang='pl'
         )
-    print(df_fp)
-    df=ytd.read_csv(df_fp)
-    d=df.iloc[0].to_dict()
-    d['txt']=fix_silerka_txt(d['txt'])
-    df.loc[0]=d
-    ytd.dump_df(df=df,fp=df_fp)
+
+    #  read subs via azure tts 
+    speech_fp,audio_len=tts_wf1(ytd=ytd)
+    
+    # do some movie processing so it looks good 
+    vidmaker_wf(vid_fp=vid_fp,
+                speech_fp=speech_fp,
+                background_fp=background_fp
+                ,working_dir_fp=dir_name)
+    
+    
+    
     
 
-
-    
-
-    a=azure_tts.azure_tts()
-    #a.talk()
-    
-    a.set_lang='pl'                                         # set language 
-    a.tmp_dir=ytd.tmp_dir                                   # rewrite tmp dir 
-    a.vids_dir=a.make_dir(fp=a.path_join(a.tmp_dir,'vids'))         # make vids dir 
-
-        
-    a.clear_dir(fp=a.vids_dir)                              # clear if you're running it again
-    df_fp=a.path_join(a.tmp_dir,'df_parsed.csv')            # get df fp 
-    a.read_df(df_fp=df_fp)                                  # read it 
-    
-    
-    duration=a.make_vids(df=df)                                  # make vids 
-    out_fp=ytd.path_join(a.vids_dir,'background.mp3')       # define backgound 
-                   # 
-    background_music_fname='CHILLSTEP_SAPPHEIROS__DAWN.webm'
-    speech_fname='combined.wav'
-    video_fname=ytd.vid_fname
-    
-    final_name='silerka'
-    silerka_wf(dir_name=dir_name
-               ,background_music_fname=background_music_fname
-               ,speech_fname=speech_fname
-               ,video_fname=video_fname
-               ,final_name = final_name
-               )
     
 
 

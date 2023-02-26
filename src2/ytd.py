@@ -200,6 +200,7 @@ class ytd(utils):
                 name='df_parsed.csv'
             fp=self.dump_df(df=df,name=name)
             
+        self.subs_df=df
         return fp
     
     # calculates pause to next row 

@@ -266,7 +266,16 @@ class azure_tts(utils):
     
     
     # makes vids from df text and updates df 
-    def make_vids(self,df=None):
+    def make_a_vid(self,txt,rate=1):
+        self.clear_dir(fp=self.vids_dir)
+
+        hash=f'{self.lambda_hash(s=txt)}_.wav'
+        fp=self.tts(out_filename=hash,txt=txt,ssms=True,rate=rate) 
+        len=self.get_vid_len(vid_fp=fp)
+        return fp,len
+        
+    
+    def make_vids(self,df : pd.DataFrame = None):
         self.clear_dir(fp=self.vids_dir)
         if df is None:
             df=self.subs_df

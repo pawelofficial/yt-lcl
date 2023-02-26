@@ -79,11 +79,14 @@ class vid_maker(utils):
         return t 
         
     def torch_cut_vid(self,vid_fp,out_fp,st_flt = 0 ,en_flt = 10, dur_flt = None ):
-        if dur_flt is not None:
-            en_flt=st_flt+dur_flt
-            
-        if en_flt==0:
+        if en_flt==0:                                       # pass zero to get whole video 
             en_flt=self.get_vid_len(vid_fp=vid_fp)
+            
+        if en_flt <0:                                       # pass negative value to trim from end 
+            en_flt=self.get_vid_len(vid_fp=vid_fp)+en_flt
+        
+        if dur_flt is not None:                             # use duration instead of en_flt with, with precedence 
+            en_flt=st_flt+dur_flt
  
         vid,audio,info=torchvision.io.read_video(vid_fp)    # get tensors from video filepath 
         vstart_frame = int(st_flt * info['video_fps'])      # video start frame 
@@ -114,23 +117,19 @@ class vid_maker(utils):
         return out_fp
 
     # split sound and video to separate files from a video 
-    def split_sound_and_video(self,vid_fp,out_dir,do_audio=True,do_video=False,timestamps=None,out_fp=None):
+    def split_sound_and_video(self,vid_fp,out_dir,do_audio=True,do_video=False,timestamps=None,out_fp=None,fname=''):
         out_audio_fp=None
         out_video_fp=None
-        if out_fp is None:
-            fname=os.path.basename(vid_fp) # fname of vid_fp
-            base=os.path.dirname(vid_fp)
-            audio_fname,_=self.strip_extension(fname,new_ext='.wav')
-            vid_fname,_=self.strip_extension(fname,new_ext='.webm')
-            out_audio_fp=self.path_join(out_dir,audio_fname)
-            out_vid_fp=self.path_join(out_dir,vid_fname)
+
+        base=os.path.dirname(vid_fp)
+        out_audio_fp=self.path_join(base,fname+'_audio_only.mp3') 
+        out_vid_fp=self.path_join(base,fname+'_vid_only.webm') 
+            
         if do_audio:
-            out_fpp=out_fp or out_audio_fp # use out_fp or audio_fp if out_fp is nont 
-            out_audio_fp=self.extract_sound_from_vid(vid_fp=vid_fp,timestamps=timestamps,out_fp=out_fpp)
+            out_audio_fp=self.extract_sound_from_vid(vid_fp=vid_fp,timestamps=timestamps,out_fp=out_audio_fp)
             
         if do_video:
-            out_fpp=out_fp or out_vid_fp
-            out_video_fp=self.extract_vid_from_vid(vid_fp=vid_fp,timestamps=timestamps,out_fp=out_fpp)
+            out_video_fp=self.extract_vid_from_vid(vid_fp=vid_fp,timestamps=timestamps,out_fp=out_vid_fp)
                    
         return out_video_fp,out_audio_fp
     
